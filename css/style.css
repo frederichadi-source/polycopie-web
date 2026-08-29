@@ -62,9 +62,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
 .brand-mark {
-  width: 22px; height: 22px; border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), #7c8ef0);
+  width: 22px; height: 22px;
   display: inline-block;
+  object-fit: contain;
 }
 .topbar-actions { display: flex; align-items: center; gap: 16px; }
 .privacy-note { font-size: 12px; color: var(--text-tertiary); max-width: 420px; display: none; }
