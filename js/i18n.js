@@ -9,6 +9,10 @@ export const STRINGS = {
     fr: "Générateur de polycopiés à partir de vos diapositives PDF.",
     en: "Turns your slide PDFs into printable handouts."
   },
+  "Copyright © 2026 Frédéric Hadi. Tous droits réservés.": {
+    fr: "Copyright © 2026 Frédéric Hadi. Tous droits réservés.",
+    en: "Copyright © 2026 Frédéric Hadi. All rights reserved."
+  },
 
   // --- Panneau d'options ---
   "Mise en page": { fr: "Mise en page", en: "Layout" },
@@ -120,13 +124,14 @@ export const STRINGS = {
   "Langue": { fr: "Langue", en: "Language" },
 
   // --- Réinitialisation ---
-  "Réinitialiser la fenêtre": { fr: "Réinitialiser la fenêtre", en: "Reset Window" },
-  "Réinitialiser la fenêtre ?": { fr: "Réinitialiser la fenêtre ?", en: "Reset the window?" },
+  "Retirer le PDF": { fr: "Retirer le PDF", en: "Remove PDF" },
+  "Réinitialiser les réglages": { fr: "Réinitialiser les réglages", en: "Reset Settings" },
+  "Réinitialiser les réglages ?": { fr: "Réinitialiser les réglages ?", en: "Reset settings?" },
   "Réinitialiser": { fr: "Réinitialiser", en: "Reset" },
   "Annuler": { fr: "Annuler", en: "Cancel" },
-  "Le PDF chargé et tous les réglages actuels seront effacés, comme au premier lancement.": {
-    fr: "Le PDF chargé et tous les réglages actuels seront effacés, comme au premier lancement.",
-    en: "The loaded PDF and all current settings will be cleared, as if the app had just launched."
+  "Tous les réglages actuels seront remis à leurs valeurs par défaut. Le PDF chargé n'est pas affecté.": {
+    fr: "Tous les réglages actuels seront remis à leurs valeurs par défaut. Le PDF chargé n'est pas affecté.",
+    en: "All current settings will be reset to their default values. The loaded PDF is not affected."
   },
 
   // --- Options de mise en page (générateur) ---

@@ -46,7 +46,7 @@ const el = {
   fileInput: $("fileInput"),
   pickFileBtn: $("pickFileBtn"),
   pickAnotherBtn: $("pickAnotherBtn"),
-  resetBtn: $("resetBtn"),
+  clearSourceBtn: $("clearSourceBtn"),
   sourceFileName: $("sourceFileName"),
   sourceSlideCount: $("sourceSlideCount"),
 
@@ -106,8 +106,9 @@ const el = {
   showPageNumbers: $("showPageNumbers"),
   showSlideNumbers: $("showSlideNumbers"),
 
-  resetDialog: $("resetDialog"),
-  confirmResetBtn: $("confirmResetBtn"),
+  resetSettingsBtn: $("resetSettingsBtn"),
+  resetSettingsDialog: $("resetSettingsDialog"),
+  confirmResetSettingsBtn: $("confirmResetSettingsBtn"),
 
   batchDialog: $("batchDialog"),
   batchEmpty: $("batchEmpty"),
@@ -473,15 +474,15 @@ el.dropZone.addEventListener("drop", (e) => {
   if (file) loadSourceFile(file);
 });
 
-el.resetBtn.addEventListener("click", () => el.resetDialog.showModal());
-el.confirmResetBtn.addEventListener("click", () => {
+// Retire le PDF chargé et revient à l'état vide, comme au premier lancement de l'app —
+// sans toucher aux réglages actuels (voir resetSettingsBtn plus bas pour ça). Action
+// immédiate, sans confirmation : contrairement à une réinitialisation des réglages, perdre
+// le PDF chargé n'est pas destructif (il suffit de le redéposer).
+el.clearSourceBtn.addEventListener("click", () => {
   state.sourceFile = null;
   state.sourceBytes = null;
   state.sourcePageCount = 0;
   state.previewReady = false;
-  options = defaultOptions();
-  saveAsLastUsed(options);
-  populateFieldsFromOptions();
 
   el.dropEmpty.classList.remove("hidden");
   el.dropFilled.classList.add("hidden");
@@ -490,7 +491,18 @@ el.confirmResetBtn.addEventListener("click", () => {
   el.toolbar.classList.add("hidden");
   clearPreview();
   hideError();
-  el.resetDialog.close();
+});
+
+// Vit dans la section Préréglages plutôt qu'à côté du PDF chargé : son action porte
+// uniquement sur les réglages, pas sur le PDF (qui reste chargé, avec son aperçu régénéré
+// selon les réglages par défaut).
+el.resetSettingsBtn.addEventListener("click", () => el.resetSettingsDialog.showModal());
+el.confirmResetSettingsBtn.addEventListener("click", () => {
+  options = defaultOptions();
+  saveAsLastUsed(options);
+  populateFieldsFromOptions();
+  if (state.sourceFile) scheduleRegeneratePreview();
+  el.resetSettingsDialog.close();
 });
 
 // ---------------------------------------------------------------------------------------

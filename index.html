@@ -16,6 +16,7 @@
   <div class="brand">
     <img class="brand-mark" src="assets/icon/brand-mark.png" alt="" aria-hidden="true" />
     <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
+    <span class="brand-version" aria-hidden="true">(v1.1)</span>
   </div>
   <div class="topbar-actions">
     <span class="privacy-note" data-i18n="Vos fichiers ne quittent jamais votre navigateur : tout le traitement se fait localement.">
@@ -45,11 +46,13 @@
         </div>
         <div class="drop-zone-filled hidden">
           <svg class="drop-icon accent" viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
-          <p class="filename" id="sourceFileName"></p>
+          <div class="filename-row">
+            <p class="filename" id="sourceFileName"></p>
+            <button type="button" class="btn icon-btn small" id="clearSourceBtn" title="Retirer le PDF" data-i18n-title="Retirer le PDF">✕</button>
+          </div>
           <p class="slide-count" id="sourceSlideCount"></p>
           <div class="drop-zone-actions">
             <button type="button" class="btn" id="pickAnotherBtn" data-i18n="Choisir un autre PDF">Choisir un autre PDF</button>
-            <button type="button" class="btn icon-btn" id="resetBtn" title="Réinitialiser la fenêtre" data-i18n-title="Réinitialiser la fenêtre">↺</button>
           </div>
         </div>
         <input type="file" id="fileInput" accept="application/pdf" hidden />
@@ -68,6 +71,9 @@
           <div class="field-row">
             <button type="button" class="btn small" id="savePresetBtn" data-i18n="Enregistrer les réglages actuels...">Enregistrer les réglages actuels...</button>
             <button type="button" class="btn small" id="managePresetsBtn" data-i18n="Gérer les préréglages...">Gérer les préréglages...</button>
+            <!-- Vit ici plutôt qu'à côté du PDF chargé (voir clearSourceBtn) : son action
+                 porte uniquement sur les réglages, pas sur le PDF chargé. -->
+            <button type="button" class="btn small icon-btn" id="resetSettingsBtn" title="Réinitialiser les réglages" data-i18n-title="Réinitialiser les réglages">↺</button>
           </div>
         </fieldset>
 
@@ -261,6 +267,10 @@
   </section>
 </main>
 
+<footer class="app-footer">
+  <span data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
+</footer>
+
 <!-- ================= DIALOGS ================= -->
 
 <dialog id="savePresetDialog" class="app-dialog">
@@ -313,13 +323,13 @@
   </div>
 </dialog>
 
-<dialog id="resetDialog" class="app-dialog">
+<dialog id="resetSettingsDialog" class="app-dialog">
   <div class="dialog-form">
-    <h2 data-i18n="Réinitialiser la fenêtre ?">Réinitialiser la fenêtre ?</h2>
-    <p class="hint" data-i18n="Le PDF chargé et tous les réglages actuels seront effacés, comme au premier lancement.">Le PDF chargé et tous les réglages actuels seront effacés, comme au premier lancement.</p>
+    <h2 data-i18n="Réinitialiser les réglages ?">Réinitialiser les réglages ?</h2>
+    <p class="hint" data-i18n="Tous les réglages actuels seront remis à leurs valeurs par défaut. Le PDF chargé n'est pas affecté.">Tous les réglages actuels seront remis à leurs valeurs par défaut. Le PDF chargé n'est pas affecté.</p>
     <div class="dialog-actions">
-      <button type="button" class="btn" data-close="resetDialog" data-i18n="Annuler">Annuler</button>
-      <button type="button" class="btn btn-danger" id="confirmResetBtn" data-i18n="Réinitialiser">Réinitialiser</button>
+      <button type="button" class="btn" data-close="resetSettingsDialog" data-i18n="Annuler">Annuler</button>
+      <button type="button" class="btn btn-danger" id="confirmResetSettingsBtn" data-i18n="Réinitialiser">Réinitialiser</button>
     </div>
   </div>
 </dialog>
