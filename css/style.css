@@ -61,7 +61,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   flex: 0 0 auto;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
-.brand-version { font-weight: 400; font-size: 12px; color: var(--text-tertiary); margin-left: -4px; }
+.brand-text { display: flex; flex-direction: column; gap: 1px; }
+.brand-name-row { display: flex; align-items: baseline; gap: 5px; }
+.brand-version { font-weight: 400; font-size: 10px; color: var(--text-tertiary); }
+.brand-copyright { font-weight: 400; font-size: 11px; color: var(--text-secondary); }
 .brand-mark {
   width: 22px; height: 22px;
   display: inline-block;
@@ -290,14 +293,3 @@ dialog.app-dialog::backdrop { background: rgba(15, 17, 22, 0.45); }
 .item-list .status-dot.processing { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
 .item-list .item-error { font-size: 11px; color: var(--failure); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* ---------- Pied de page ---------- */
-.app-footer {
-  flex: 0 0 auto;
-  text-align: center;
-  padding: 8px 20px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  border-top: 1px solid var(--border);
-  background: var(--surface);
-}
