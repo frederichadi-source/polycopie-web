@@ -9,11 +9,9 @@
   --layout: #4f66d9;
   --paper: #8c6133;
   --title: #b83d75;
-  --headerfooter: #33739e;
   --options: #2e8c75;
   --success: #2f9e44;
   --failure: #e03131;
-  --warning: #e8590c;
 
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -91,25 +89,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
   min-height: 0;
 }
 @media (max-width: 780px) {
-  /* Sans plafond, le panneau d'options (surtout en mode Avancé, avec ses nombreux champs)
-     pouvait pousser l'aperçu du PDF hors écran, obligeant à défiler toute la sidebar avant
-     de voir le moindre rendu. On la borne à 55% de la hauteur d'écran avec son propre
-     défilement interne (.sidebar a déjà min-height:0 plus bas), pour garder l'aperçu
-     visible tout de suite en dessous. */
-  .layout { grid-template-columns: 1fr; grid-template-rows: minmax(0, 55vh) 1fr; }
+  .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
 }
 
 .sidebar {
   border-right: 1px solid var(--border);
   background: var(--surface);
   min-height: 0;
-  min-width: 0; /* évite qu'un enfant trop large (ex: .color-opacity-row) élargisse toute
-                   la colonne de la grille .layout et provoque un défilement horizontal
-                   inutile sur la page entière. */
   display: flex;
   flex-direction: column;
 }
-.sidebar-scroll { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.sidebar-scroll { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 
 .detail {
   position: relative;
@@ -146,10 +136,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .drop-zone .slide-count { font-size: 12px; color: var(--text-tertiary); }
 .drop-zone-actions { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
 .hidden { display: none !important; }
-/* Contrairement à `.hidden`, garde sa place dans la mise en page — utilisé pour le bouton
-   de reset de la couleur des lignes, pour éviter qu'une ligne du formulaire change de
-   hauteur selon qu'il est affiché ou non (voir noteLineColorReset dans app.js). */
-.invisible { visibility: hidden; }
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -172,41 +158,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn-danger:hover { background: color-mix(in srgb, var(--failure) 88%, black); }
 .btn-large { width: 100%; padding: 12px; font-size: 14px; }
 
-/* ---------- Mode Essentiel / Avancé ----------
-   Équivalent du modeTabBar de ContentView.swift : deux onglets dans un conteneur arrondi,
-   l'onglet actif se distinguant par un fond de la couleur d'accent (texte blanc). Le choix
-   est persisté sous la même clé que côté macOS (@AppStorage("showAdvancedOptions")), pour
-   garder la même intention (réglage d'affichage, pas un réglage de mise en page — il ne
-   fait donc pas partie de HandoutOptions ni des préréglages). */
-.mode-bar-row { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
-.mode-bar {
-  display: flex; gap: 3px; padding: 3px; border-radius: 8px;
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-  flex: 1 1 auto; min-width: 0;
-}
-.mode-tab {
-  flex: 1 1 0; min-width: 0;
-  border: none; background: transparent; cursor: pointer;
-  padding: 6px 4px; border-radius: 6px;
-  font-size: 12.5px; font-weight: 500; color: var(--text-secondary);
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.mode-tab.active { background: var(--accent); color: white; font-weight: 600; }
-
 /* ---------- Options panel ---------- */
-.options-panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.options-panel { display: flex; flex-direction: column; gap: 14px; }
 .opt-section {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 14px 14px;
   margin: 0;
-  min-width: 0; /* un <fieldset> a par défaut une largeur minimale = celle de son contenu
-                   (min-content) : sans ceci, un long libellé traduit (l'anglais est souvent
-                   plus long) ou la ligne couleur+opacité pouvait forcer un débordement
-                   horizontal de toute la barre latérale plutôt que de tronquer/adapter. */
 }
-.opt-section select,
-.opt-section textarea { min-width: 0; }
 .opt-section legend {
   display: flex; align-items: center; gap: 8px;
   font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;
@@ -216,7 +175,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .opt-section[data-accent="layout"] .section-icon { color: var(--layout); }
 .opt-section[data-accent="paper"] .section-icon { color: var(--paper); }
 .opt-section[data-accent="title"] .section-icon { color: var(--title); }
-.opt-section[data-accent="headerfooter"] .section-icon { color: var(--headerfooter); }
 .opt-section[data-accent="options"] .section-icon { color: var(--options); }
 .section-icon { font-size: 14px; }
 
@@ -241,28 +199,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field-row .btn.icon-btn { flex: 0 0 auto; }
 
 .hint { font-size: 11.5px; color: var(--text-tertiary); margin: 4px 2px 0; }
-.hint-warning {
-  display: flex; align-items: flex-start; gap: 5px;
-  color: var(--warning);
-}
-.hint-warning-icon { flex: 0 0 auto; line-height: 1.3; }
-
-.color-opacity-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.color-opacity-row input[type="color"] { flex: 0 0 auto; width: 40px; }
-.color-opacity-row input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
-.color-opacity-row .icon-btn {
-  flex: 0 0 auto; border: none; background: none; padding: 2px 4px; font-size: 14px;
-  color: var(--text-tertiary); cursor: pointer;
-}
-.color-opacity-row .icon-btn:hover { color: var(--text); }
-
-.color-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.color-row input[type="color"] { flex: 0 0 auto; width: 40px; }
-.color-row .icon-btn {
-  flex: 0 0 auto; border: none; background: none; padding: 2px 4px; font-size: 14px;
-  color: var(--text-tertiary); cursor: pointer;
-}
-.color-row .icon-btn:hover { color: var(--text); }
 
 .toggle-group { display: flex; gap: 6px; }
 .toggle-btn {
