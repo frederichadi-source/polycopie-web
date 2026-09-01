@@ -5,7 +5,7 @@
 
 import { t, getLang, setLang } from "./i18n.js";
 import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice } from "./store.js";
-import { generateHandout, HandoutError, PDFDocument } from "./pdfEngine.js";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatio } from "./pdfEngine.js";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -22,6 +22,7 @@ const state = {
   sourceFile: null,
   sourceBytes: null,
   sourcePageCount: 0,
+  sourceAspectRatio: 16 / 9,
   previewReady: false,
   batchFiles: [], // {id, file, status, errorMessage, outputBytes}
   batchOptionsSnapshot: null,
@@ -83,6 +84,12 @@ const el = {
   slideScaleOut: $("slideScaleOut"),
   lineSpacingPoints: $("lineSpacingPoints"),
   lineSpacingOut: $("lineSpacingOut"),
+  noteLineStyle: $("noteLineStyle"),
+  noteLineColorField: $("noteLineColorField"),
+  noteLineColor: $("noteLineColor"),
+  noteLineOpacity: $("noteLineOpacity"),
+  noteLineColorReset: $("noteLineColorReset"),
+  notesAreaWarning: $("notesAreaWarning"),
 
   pageSize: $("pageSize"),
   orientation: $("orientation"),
@@ -103,7 +110,21 @@ const el = {
   titleFontSizeOut: $("titleFontSizeOut"),
   titlePageFontColor: $("titlePageFontColor"),
 
+  headerEnabled: $("headerEnabled"),
+  headerFields: $("headerFields"),
+  headerUsesTitleText: $("headerUsesTitleText"),
+  headerTextField: $("headerTextField"),
+  headerText: $("headerText"),
+
+  footerEnabled: $("footerEnabled"),
+  footerFields: $("footerFields"),
+  footerUsesTitleText: $("footerUsesTitleText"),
+  footerTextField: $("footerTextField"),
+  footerText: $("footerText"),
+
   showPageNumbers: $("showPageNumbers"),
+  pageNumberIncludesTitlePageField: $("pageNumberIncludesTitlePageField"),
+  pageNumberIncludesTitlePage: $("pageNumberIncludesTitlePage"),
   showSlideNumbers: $("showSlideNumbers"),
 
   resetSettingsBtn: $("resetSettingsBtn"),
@@ -173,6 +194,9 @@ function populateFieldsFromOptions() {
   el.noteStyle.value = options.noteStyle;
   el.slideScale.value = String(options.slideScale);
   el.lineSpacingPoints.value = String(options.lineSpacingPoints);
+  el.noteLineStyle.value = options.noteLineStyle;
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
 
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
@@ -187,7 +211,16 @@ function populateFieldsFromOptions() {
   el.titlePageFontSize.value = String(options.titlePageFontSize);
   el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
 
+  el.headerEnabled.checked = options.headerEnabled;
+  el.headerUsesTitleText.checked = options.headerSource === "titlePageText";
+  el.headerText.value = options.headerText;
+
+  el.footerEnabled.checked = options.footerEnabled;
+  el.footerUsesTitleText.checked = options.footerSource === "titlePageText";
+  el.footerText.value = options.footerText;
+
   el.showPageNumbers.checked = options.showPageNumbers;
+  el.pageNumberIncludesTitlePage.checked = options.pageNumberIncludesTitlePage;
   el.showSlideNumbers.checked = options.showSlideNumbers;
 
   updateConditionalVisibility();
@@ -206,8 +239,32 @@ function updateConditionalVisibility() {
   }
 
   el.noteDependentFields.classList.toggle("hidden", options.noteStyle === "none");
+  el.noteLineColorField.classList.toggle("hidden", options.noteLineStyle === "none");
+  // Le bouton de reset reste toujours dans le DOM (voir index.html) — seule sa visibilité
+  // change, via `.invisible` (garde sa place) plutôt que `.hidden` (la libère) : un bouton
+  // qui apparaît/disparaît changerait la hauteur de la ligne, d'où le petit "saut" observé
+  // avant ce correctif.
+  const isDefaultLineColor =
+    options.noteLineColor.r === 0.75 && options.noteLineColor.g === 0.75 &&
+    options.noteLineColor.b === 0.75 && options.noteLineColor.a === 1;
+  el.noteLineColorReset.classList.toggle("invisible", isDefaultLineColor);
+  el.notesAreaWarning.classList.toggle(
+    "hidden",
+    !notesAreaWouldBeEmpty(options, state.sourceAspectRatio)
+  );
+
   el.titlePageFields.classList.toggle("hidden", !options.titlePageEnabled);
   el.textPositionField.classList.toggle("hidden", !options.titlePageIncludesFirstSlide);
+
+  el.headerFields.classList.toggle("hidden", !options.headerEnabled);
+  el.headerTextField.classList.toggle("hidden", options.headerSource === "titlePageText");
+  el.footerFields.classList.toggle("hidden", !options.footerEnabled);
+  el.footerTextField.classList.toggle("hidden", options.footerSource === "titlePageText");
+
+  el.pageNumberIncludesTitlePageField.classList.toggle(
+    "hidden",
+    !(options.showPageNumbers && options.titlePageEnabled)
+  );
 
   el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
   el.italicToggle.classList.toggle("active", options.titlePageFontItalic);
@@ -250,6 +307,21 @@ bindSelect(el.gridArrangement, "gridArrangement");
 bindSelect(el.noteStyle, "noteStyle");
 bindRange(el.slideScale, "slideScale");
 bindRange(el.lineSpacingPoints, "lineSpacingPoints");
+bindSelect(el.noteLineStyle, "noteLineStyle");
+el.noteLineColor.addEventListener("input", () => {
+  options.noteLineColor = { ...hexToRgb01(el.noteLineColor.value), a: options.noteLineColor.a };
+  onOptionsChanged();
+});
+el.noteLineOpacity.addEventListener("input", () => {
+  options.noteLineColor = { ...options.noteLineColor, a: parseFloat(el.noteLineOpacity.value) };
+  onOptionsChanged();
+});
+el.noteLineColorReset.addEventListener("click", () => {
+  options.noteLineColor = { ...defaultOptions().noteLineColor };
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
+  onOptionsChanged();
+});
 
 bindSelect(el.pageSize, "pageSize");
 bindSelect(el.orientation, "orientation");
@@ -279,7 +351,28 @@ el.italicToggle.addEventListener("click", () => {
   onOptionsChanged();
 });
 
+bindCheckbox(el.headerEnabled, "headerEnabled");
+el.headerUsesTitleText.addEventListener("change", () => {
+  options.headerSource = el.headerUsesTitleText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.headerText.addEventListener("input", () => {
+  options.headerText = el.headerText.value;
+  onOptionsChanged();
+});
+
+bindCheckbox(el.footerEnabled, "footerEnabled");
+el.footerUsesTitleText.addEventListener("change", () => {
+  options.footerSource = el.footerUsesTitleText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.footerText.addEventListener("input", () => {
+  options.footerText = el.footerText.value;
+  onOptionsChanged();
+});
+
 bindCheckbox(el.showPageNumbers, "showPageNumbers");
+bindCheckbox(el.pageNumberIncludesTitlePage, "pageNumberIncludesTitlePage");
 bindCheckbox(el.showSlideNumbers, "showSlideNumbers");
 
 // ---------------------------------------------------------------------------------------
@@ -426,6 +519,7 @@ async function loadSourceFile(file) {
     state.sourceFile = file;
     state.sourceBytes = bytes;
     state.sourcePageCount = pageCount;
+    state.sourceAspectRatio = sourceAspectRatio(doc);
     state.previewReady = false;
 
     el.dropEmpty.classList.add("hidden");
@@ -437,6 +531,7 @@ async function loadSourceFile(file) {
     el.exportBtn.classList.remove("hidden");
     el.toolbar.classList.remove("hidden");
     updateExportEnabled();
+    updateConditionalVisibility();
 
     scheduleRegeneratePreview();
   } catch {
@@ -482,6 +577,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   state.sourceFile = null;
   state.sourceBytes = null;
   state.sourcePageCount = 0;
+  state.sourceAspectRatio = 16 / 9;
   state.previewReady = false;
 
   el.dropEmpty.classList.remove("hidden");
@@ -491,6 +587,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   el.toolbar.classList.add("hidden");
   clearPreview();
   hideError();
+  updateConditionalVisibility();
 });
 
 // Vit dans la section Préréglages plutôt qu'à côté du PDF chargé : son action porte
