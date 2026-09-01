@@ -27,6 +27,9 @@ export function defaultOptions() {
     titlePageFontItalic: false,
     titlePageFontSize: 15,
     titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 },
+    // v1.3 : page blanche insérée après la page de titre, pratique pour l'impression
+    // recto-verso (le contenu démarre alors toujours sur une page de droite).
+    titlePageAddBlankPageAfter: false,
     headerEnabled: false,
     headerText: "",
     headerSource: "custom", // custom | titlePageText

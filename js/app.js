@@ -18,6 +18,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.0.379/buil
 let options = loadLastUsed();
 const presetStore = new PresetStore();
 
+// Mode Essentiel/Avancé : réglage d'affichage du panneau, pas un réglage de mise en page
+// (voir showAdvancedOptions côté Swift/ContentView.swift) — volontairement hors de
+// `options`, donc jamais enregistré dans les préréglages ni dans les derniers réglages
+// utilisés. Persisté sous la même clé que la version macOS (@AppStorage).
+let showAdvancedOptions = localStorage.getItem("showAdvancedOptions") === "true";
+
 const state = {
   sourceFile: null,
   sourceBytes: null,
@@ -52,6 +58,8 @@ const el = {
   sourceSlideCount: $("sourceSlideCount"),
 
   optionsPanel: $("optionsPanel"),
+  modeTabBasic: $("modeTabBasic"),
+  modeTabAdvanced: $("modeTabAdvanced"),
   exportBtn: $("exportBtn"),
   exportBtnToolbar: $("exportBtnToolbar"),
   toolbar: $("toolbar"),
@@ -98,7 +106,9 @@ const el = {
 
   titlePageEnabled: $("titlePageEnabled"),
   titlePageFields: $("titlePageFields"),
+  titlePageEssentialCaption: $("titlePageEssentialCaption"),
   titlePageIncludesFirstSlide: $("titlePageIncludesFirstSlide"),
+  titlePageAddBlankPageAfter: $("titlePageAddBlankPageAfter"),
   titlePageText: $("titlePageText"),
   textPositionField: $("textPositionField"),
   titlePageTextPosition: $("titlePageTextPosition"),
@@ -171,6 +181,21 @@ el.langSelect.addEventListener("change", () => {
 });
 
 // ---------------------------------------------------------------------------------------
+// Mode Essentiel / Avancé
+// ---------------------------------------------------------------------------------------
+
+function setAdvancedMode(advanced) {
+  showAdvancedOptions = advanced;
+  localStorage.setItem("showAdvancedOptions", String(advanced));
+  el.modeTabBasic.classList.toggle("active", !advanced);
+  el.modeTabAdvanced.classList.toggle("active", advanced);
+  document.querySelectorAll(".adv-only").forEach((node) => node.classList.toggle("hidden", !advanced));
+  updateConditionalVisibility();
+}
+el.modeTabBasic.addEventListener("click", () => setAdvancedMode(false));
+el.modeTabAdvanced.addEventListener("click", () => setAdvancedMode(true));
+
+// ---------------------------------------------------------------------------------------
 // Réglages <-> formulaire
 // ---------------------------------------------------------------------------------------
 
@@ -205,6 +230,7 @@ function populateFieldsFromOptions() {
 
   el.titlePageEnabled.checked = options.titlePageEnabled;
   el.titlePageIncludesFirstSlide.checked = options.titlePageIncludesFirstSlide;
+  el.titlePageAddBlankPageAfter.checked = options.titlePageAddBlankPageAfter;
   el.titlePageText.value = options.titlePageText;
   el.titlePageTextPosition.value = options.titlePageTextPosition;
   el.titlePageTextAlignment.value = options.titlePageTextAlignment;
@@ -240,7 +266,11 @@ function updateConditionalVisibility() {
   }
 
   el.noteDependentFields.classList.toggle("hidden", options.noteStyle === "none");
-  el.noteLineColorField.classList.toggle("hidden", options.noteLineStyle === "none");
+  // Ces champs sont à la fois "adv-only" (masqués en mode Essentiel, voir setAdvancedMode)
+  // et conditionnés par d'autres réglages ci-dessous : combiner les deux avec `&&` plutôt
+  // que de laisser cette condition écraser l'état posé par setAdvancedMode, sans quoi un
+  // champ avancé réapparaissait en mode Essentiel dès que sa condition propre devenait vraie.
+  el.noteLineColorField.classList.toggle("hidden", !showAdvancedOptions || options.noteLineStyle === "none");
   // Le bouton de reset reste toujours dans le DOM (voir index.html) — seule sa visibilité
   // change, via `.invisible` (garde sa place) plutôt que `.hidden` (la libère) : un bouton
   // qui apparaît/disparaît changerait la hauteur de la ligne, d'où le petit "saut" observé
@@ -260,7 +290,16 @@ function updateConditionalVisibility() {
   );
 
   el.titlePageFields.classList.toggle("hidden", !options.titlePageEnabled);
-  el.textPositionField.classList.toggle("hidden", !options.titlePageIncludesFirstSlide);
+  el.textPositionField.classList.toggle("hidden", !showAdvancedOptions || !options.titlePageIncludesFirstSlide);
+  // Mode Essentiel : uniquement l'activation, sans les réglages fins (police, couleur,
+  // position...) réservés au mode Avancé — une légende explique le comportement par défaut
+  // (reprend directement la diapositive 1), comme côté Swift.
+  el.titlePageEssentialCaption.classList.toggle("hidden", showAdvancedOptions);
+  el.titlePageEssentialCaption.textContent = t(
+    options.titlePageIncludesFirstSlide
+      ? "La première diapositive sera utilisée comme page de titre."
+      : "Une page de titre sera ajoutée avant vos diapositives."
+  );
   // Même logique que noteLineColorReset ci-dessus (bouton toujours dans le DOM, comparaison
   // via le hex arrondi) — pas d'opacité ici, la couleur du texte n'en a pas.
   const isDefaultTitleColor =
@@ -274,7 +313,7 @@ function updateConditionalVisibility() {
 
   el.pageNumberIncludesTitlePageField.classList.toggle(
     "hidden",
-    !(options.showPageNumbers && options.titlePageEnabled)
+    !showAdvancedOptions || !(options.showPageNumbers && options.titlePageEnabled)
   );
 
   el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
@@ -342,6 +381,7 @@ bindRange(el.marginPoints, "marginPoints");
 
 bindCheckbox(el.titlePageEnabled, "titlePageEnabled");
 bindCheckbox(el.titlePageIncludesFirstSlide, "titlePageIncludesFirstSlide");
+bindCheckbox(el.titlePageAddBlankPageAfter, "titlePageAddBlankPageAfter");
 el.titlePageText.addEventListener("input", () => {
   options.titlePageText = el.titlePageText.value;
   onOptionsChanged();
@@ -875,5 +915,6 @@ el.batchDialog.addEventListener("close", () => {
 populateFieldsFromOptions();
 populatePresetSelect();
 renderBatchList();
+setAdvancedMode(showAdvancedOptions);
 applyI18n();
 updateExportEnabled();

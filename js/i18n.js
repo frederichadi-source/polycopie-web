@@ -14,6 +14,19 @@ export const STRINGS = {
     en: "Copyright © 2026 Frédéric Hadi. All rights reserved."
   },
 
+  // --- Mode Essentiel / Avancé ---
+  "Mode": { fr: "Mode", en: "Mode" },
+  "Essentiel": { fr: "Essentiel", en: "Basic" },
+  "Avancé": { fr: "Avancé", en: "Advanced" },
+  "La première diapositive sera utilisée comme page de titre.": {
+    fr: "La première diapositive sera utilisée comme page de titre.",
+    en: "The first slide will be used as the title page."
+  },
+  "Une page de titre sera ajoutée avant vos diapositives.": {
+    fr: "Une page de titre sera ajoutée avant vos diapositives.",
+    en: "A title page will be added before your slides."
+  },
+
   // --- Panneau d'options ---
   "Mise en page": { fr: "Mise en page", en: "Layout" },
   "Diapositives par page": { fr: "Diapositives par page", en: "Slides per page" },
@@ -98,6 +111,15 @@ export const STRINGS = {
   "Italique": { fr: "Italique", en: "Italic" },
   "Taille du texte": { fr: "Taille du texte", en: "Text size" },
   "Couleur du texte": { fr: "Couleur du texte", en: "Text color" },
+
+  "Ajouter une page blanche après la page de titre": {
+    fr: "Ajouter une page blanche après la page de titre",
+    en: "Add a blank page after the title page"
+  },
+  "Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.": {
+    fr: "Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.",
+    en: "Handy for double-sided printing: the content will always start on a right-hand page."
+  },
 
   // --- En-tête / Pied de page ---
   "En-tête / Pied de page": { fr: "En-tête / Pied de page", en: "Header / Footer" },
@@ -193,7 +215,6 @@ export const STRINGS = {
   "Ce fichier ne semble pas être un PDF valide.": { fr: "Ce fichier ne semble pas être un PDF valide.", en: "This file doesn't seem to be a valid PDF." },
 
   // --- Divers web ---
-  "Réinitialiser": { fr: "Réinitialiser", en: "Reset" },
   "Aperçu": { fr: "Aperçu", en: "Preview" },
   "Page {n} sur {total}": { fr: "Page {n} sur {total}", en: "Page {n} of {total}" },
   "Chargement de l'aperçu...": { fr: "Chargement de l'aperçu...", en: "Loading preview..." },

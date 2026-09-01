@@ -453,6 +453,14 @@ export async function generateHandout(sourceBytes, options, onProgress) {
     if (titleShowsNumber) drawFooterBand(page, outputPageNumber, "", pageSize, margin, labelFont);
     if (options.titlePageIncludesFirstSlide) sourcePageIndex = 1;
     if (onProgress) onProgress(outputPageNumber);
+
+    // Page blanche optionnelle après la page de titre (impression recto-verso) : entièrement
+    // vierge, sans numéro ni en-tête/pied de page, et volontairement exclue de la
+    // numérotation (outputPageNumber n'est pas incrémenté) pour que la première page de
+    // contenu garde le même numéro qu'en son absence.
+    if (options.titlePageAddBlankPageAfter) {
+      newPage();
+    }
   }
 
   while (sourcePageIndex < pageCount) {
