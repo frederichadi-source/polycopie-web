@@ -7,20 +7,6 @@ d'un PDF exporté depuis PowerPoint/Keynote/Slides.
 Tout le traitement se fait **dans le navigateur** (pdf-lib pour générer le PDF, pdf.js pour
 l'aperçu, JSZip pour le traitement par lot) : aucun fichier n'est envoyé à un serveur.
 
-## Nouveautés v1.2
-
-- Style de ligne des zones de notes : continue, tirets, pointillés, ou sans ligne (zone
-  vierge) — avec couleur et opacité personnalisables.
-- En-tête et pied de page texte, avec option de reprendre automatiquement le texte de la
-  page de titre ; jamais affichés sur la page de titre elle-même.
-- La page de titre peut être exclue de la numérotation des pages (les pages de contenu
-  redémarrent alors à 1).
-- Format de papier Legal (US).
-- Avertissement dans le panneau de réglages quand la zone de notes serait trop réduite pour
-  afficher des lignes.
-- Numéro de page ancré dans le coin en bas à droite (avec marge de sécurité) quand un texte
-  de pied de page est également affiché, pour éviter tout chevauchement.
-
 ## Déploiement sur GitHub Pages
 
 1. Poussez le contenu de ce dossier à la racine d'un dépôt GitHub (ou dans un sous-dossier

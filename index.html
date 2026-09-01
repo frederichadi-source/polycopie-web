@@ -18,7 +18,7 @@
     <div class="brand-text">
       <div class="brand-name-row">
         <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
-        <span class="brand-version" aria-hidden="true">(v1.2)</span>
+        <span class="brand-version" aria-hidden="true">(v1.1)</span>
       </div>
       <span class="brand-copyright" data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
     </div>
@@ -128,27 +128,6 @@
               <input type="range" id="lineSpacingPoints" min="14" max="36" step="1" />
               <output id="lineSpacingOut"></output>
             </label>
-            <label class="field">
-              <span class="field-label" data-i18n="Style de ligne">Style de ligne</span>
-              <select id="noteLineStyle">
-                <option value="none" data-i18n="Sans ligne (zone vierge)">Sans ligne (zone vierge)</option>
-                <option value="solid" data-i18n="Continue">Continue</option>
-                <option value="dashed" data-i18n="Tirets">Tirets</option>
-                <option value="dotted" data-i18n="Pointillés">Pointillés</option>
-              </select>
-            </label>
-            <div class="field" id="noteLineColorField">
-              <span class="field-label" data-i18n="Couleur des lignes">Couleur des lignes</span>
-              <div class="color-opacity-row">
-                <button type="button" class="btn icon-btn invisible" id="noteLineColorReset" title="Réinitialiser la couleur des lignes" data-i18n-title="Réinitialiser la couleur des lignes">↺</button>
-                <input type="color" id="noteLineColor" value="#bfbfbf" />
-                <input type="range" id="noteLineOpacity" min="0" max="1" step="0.05" title="Opacité" data-i18n-title="Opacité" />
-              </div>
-            </div>
-            <p class="hint hint-warning hidden" id="notesAreaWarning">
-              <span class="hint-warning-icon" aria-hidden="true">⚠</span>
-              <span data-i18n="Trop peu de place pour les lignes : la zone de notes restera vierge.">Trop peu de place pour les lignes : la zone de notes restera vierge.</span>
-            </p>
           </div>
         </fieldset>
 
@@ -159,7 +138,6 @@
             <select id="pageSize">
               <option value="letter" data-i18n="Letter (US)">Letter (US)</option>
               <option value="a4" data-i18n="A4">A4</option>
-              <option value="legal" data-i18n="Legal (US)">Legal (US)</option>
             </select>
           </label>
           <label class="field">
@@ -242,49 +220,11 @@
           </div>
         </fieldset>
 
-        <fieldset class="opt-section" data-accent="headerfooter">
-          <legend><span class="section-icon">▤</span><span data-i18n="En-tête / Pied de page">En-tête / Pied de page</span></legend>
-
-          <label class="field checkbox-field">
-            <input type="checkbox" id="headerEnabled" />
-            <span data-i18n="Afficher un texte en en-tête">Afficher un texte en en-tête</span>
-          </label>
-          <div id="headerFields" class="hidden">
-            <label class="field checkbox-field">
-              <input type="checkbox" id="headerUsesTitleText" />
-              <span data-i18n="Utiliser le texte de la page de titre">Utiliser le texte de la page de titre</span>
-            </label>
-            <label class="field" id="headerTextField">
-              <input type="text" id="headerText" data-i18n-placeholder="Texte de l'en-tête" placeholder="Texte de l'en-tête" />
-            </label>
-          </div>
-
-          <label class="field checkbox-field">
-            <input type="checkbox" id="footerEnabled" />
-            <span data-i18n="Afficher un texte en pied de page">Afficher un texte en pied de page</span>
-          </label>
-          <div id="footerFields" class="hidden">
-            <label class="field checkbox-field">
-              <input type="checkbox" id="footerUsesTitleText" />
-              <span data-i18n="Utiliser le texte de la page de titre">Utiliser le texte de la page de titre</span>
-            </label>
-            <label class="field" id="footerTextField">
-              <input type="text" id="footerText" data-i18n-placeholder="Texte du pied de page" placeholder="Texte du pied de page" />
-            </label>
-          </div>
-
-          <p class="hint" data-i18n="Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.">Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.</p>
-        </fieldset>
-
         <fieldset class="opt-section" data-accent="options">
           <legend><span class="section-icon">⚙</span><span data-i18n="Options">Options</span></legend>
           <label class="field checkbox-field">
             <input type="checkbox" id="showPageNumbers" />
             <span data-i18n="Numéroter les pages">Numéroter les pages</span>
-          </label>
-          <label class="field checkbox-field" id="pageNumberIncludesTitlePageField">
-            <input type="checkbox" id="pageNumberIncludesTitlePage" />
-            <span data-i18n="La page de titre compte dans la numérotation">La page de titre compte dans la numérotation</span>
           </label>
           <label class="field checkbox-field">
             <input type="checkbox" id="showSlideNumbers" />

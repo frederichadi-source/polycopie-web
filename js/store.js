@@ -7,7 +7,7 @@ export function defaultOptions() {
   return {
     slidesPerPage: 3,
     noteStyle: "linesBeside", // none | linesBelow | linesBeside | linesAround
-    pageSize: "letter", // letter | a4 | legal
+    pageSize: "letter", // letter | a4
     orientation: "portrait", // portrait | landscape
     gridArrangement: "automatic", // automatic | stacked | sideBySide
     showPageNumbers: true,
@@ -15,8 +15,6 @@ export function defaultOptions() {
     marginPoints: 28,
     lineSpacingPoints: 22,
     slideScale: 0.8,
-    noteLineStyle: "solid", // none | solid | dashed | dotted
-    noteLineColor: { r: 0.75, g: 0.75, b: 0.75, a: 1 },
     titlePageEnabled: false,
     titlePageIncludesFirstSlide: true,
     titlePageText: "",
@@ -26,14 +24,7 @@ export function defaultOptions() {
     titlePageFontWeight: "regular", // regular | bold
     titlePageFontItalic: false,
     titlePageFontSize: 15,
-    titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 },
-    headerEnabled: false,
-    headerText: "",
-    headerSource: "custom", // custom | titlePageText
-    footerEnabled: false,
-    footerText: "",
-    footerSource: "custom", // custom | titlePageText
-    pageNumberIncludesTitlePage: true
+    titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 }
   };
 }
 
@@ -69,10 +60,7 @@ export function resolvedGrid(options) {
 }
 
 export function resolvedPageSize(options) {
-  const base =
-    options.pageSize === "a4" ? { width: 595, height: 842 } :
-    options.pageSize === "legal" ? { width: 612, height: 1008 } :
-    { width: 612, height: 792 };
+  const base = options.pageSize === "a4" ? { width: 595, height: 842 } : { width: 612, height: 792 };
   return options.orientation === "portrait" ? base : { width: base.height, height: base.width };
 }
 
