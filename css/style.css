@@ -10,6 +10,8 @@
   --paper: #8c6133;
   --title: #b83d75;
   --options: #2e8c75;
+  --headerfooter: #3373a6;
+  --warning: #e8730c;
   --success: #2f9e44;
   --failure: #e03131;
 
@@ -175,6 +177,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .opt-section[data-accent="layout"] .section-icon { color: var(--layout); }
 .opt-section[data-accent="paper"] .section-icon { color: var(--paper); }
 .opt-section[data-accent="title"] .section-icon { color: var(--title); }
+.opt-section[data-accent="headerfooter"] .section-icon { color: var(--headerfooter); }
 .opt-section[data-accent="options"] .section-icon { color: var(--options); }
 .section-icon { font-size: 14px; }
 
@@ -199,6 +202,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field-row .btn.icon-btn { flex: 0 0 auto; }
 
 .hint { font-size: 11.5px; color: var(--text-tertiary); margin: 4px 2px 0; }
+.hint.warning { color: var(--warning); }
+
+.color-field { margin-top: 10px; }
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-row input[type="color"] { flex: 1; }
+.color-row .icon-btn.small {
+  flex: 0 0 auto; width: 30px; height: 32px; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+  color: var(--text-secondary);
+}
+.color-row .icon-btn.small:hover { background: var(--bg); }
 
 .toggle-group { display: flex; gap: 6px; }
 .toggle-btn {

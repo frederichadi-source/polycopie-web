@@ -4,8 +4,8 @@
 // serveur.
 
 import { t, getLang, setLang } from "./i18n.js";
-import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice } from "./store.js";
-import { generateHandout, HandoutError, PDFDocument } from "./pdfEngine.js";
+import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice, DEFAULT_NOTE_LINE_COLOR } from "./store.js";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatio } from "./pdfEngine.js";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -22,6 +22,7 @@ const state = {
   sourceFile: null,
   sourceBytes: null,
   sourcePageCount: 0,
+  sourceAspectRatio: 16 / 9,
   previewReady: false,
   batchFiles: [], // {id, file, status, errorMessage, outputBytes}
   batchOptionsSnapshot: null,
@@ -83,6 +84,11 @@ const el = {
   slideScaleOut: $("slideScaleOut"),
   lineSpacingPoints: $("lineSpacingPoints"),
   lineSpacingOut: $("lineSpacingOut"),
+  noteLineStyle: $("noteLineStyle"),
+  noteLineColorField: $("noteLineColorField"),
+  noteLineColor: $("noteLineColor"),
+  resetNoteLineColorBtn: $("resetNoteLineColorBtn"),
+  notesAreaWarning: $("notesAreaWarning"),
 
   pageSize: $("pageSize"),
   orientation: $("orientation"),
@@ -103,7 +109,21 @@ const el = {
   titleFontSizeOut: $("titleFontSizeOut"),
   titlePageFontColor: $("titlePageFontColor"),
 
+  headerEnabled: $("headerEnabled"),
+  headerFields: $("headerFields"),
+  headerUseTitlePageText: $("headerUseTitlePageText"),
+  headerTextField: $("headerTextField"),
+  headerText: $("headerText"),
+  footerEnabled: $("footerEnabled"),
+  footerFields: $("footerFields"),
+  footerUseTitlePageText: $("footerUseTitlePageText"),
+  footerTextField: $("footerTextField"),
+  footerText: $("footerText"),
+  headerFooterHint: $("headerFooterHint"),
+
   showPageNumbers: $("showPageNumbers"),
+  pageNumberIncludesTitlePageField: $("pageNumberIncludesTitlePageField"),
+  pageNumberIncludesTitlePage: $("pageNumberIncludesTitlePage"),
   showSlideNumbers: $("showSlideNumbers"),
 
   resetSettingsBtn: $("resetSettingsBtn"),
@@ -173,6 +193,8 @@ function populateFieldsFromOptions() {
   el.noteStyle.value = options.noteStyle;
   el.slideScale.value = String(options.slideScale);
   el.lineSpacingPoints.value = String(options.lineSpacingPoints);
+  el.noteLineStyle.value = options.noteLineStyle;
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
 
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
@@ -187,10 +209,26 @@ function populateFieldsFromOptions() {
   el.titlePageFontSize.value = String(options.titlePageFontSize);
   el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
 
+  el.headerEnabled.checked = options.headerEnabled;
+  el.headerUseTitlePageText.checked = options.headerSource === "titlePageText";
+  el.headerText.value = options.headerText;
+  el.footerEnabled.checked = options.footerEnabled;
+  el.footerUseTitlePageText.checked = options.footerSource === "titlePageText";
+  el.footerText.value = options.footerText;
+
   el.showPageNumbers.checked = options.showPageNumbers;
+  el.pageNumberIncludesTitlePage.checked = options.pageNumberIncludesTitlePage;
   el.showSlideNumbers.checked = options.showSlideNumbers;
 
   updateConditionalVisibility();
+}
+
+/** Compare deux couleurs RGBA {r,g,b,a} avec une tolérance flottante — port de la
+ * comparaison `Equatable` utilisée côté Swift/SwiftUI pour l'affichage du bouton de
+ * réinitialisation de la couleur des lignes. */
+function colorsEqual(a, b) {
+  const eps = 0.002;
+  return Math.abs(a.r - b.r) < eps && Math.abs(a.g - b.g) < eps && Math.abs(a.b - b.b) < eps && Math.abs(a.a - b.a) < eps;
 }
 
 function updateConditionalVisibility() {
@@ -211,6 +249,26 @@ function updateConditionalVisibility() {
 
   el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
   el.italicToggle.classList.toggle("active", options.titlePageFontItalic);
+
+  const showLineColor = options.noteStyle !== "none" && options.noteLineStyle !== "none";
+  el.noteLineColorField.classList.toggle("hidden", !showLineColor);
+  const isDefaultLineColor = colorsEqual(options.noteLineColor, DEFAULT_NOTE_LINE_COLOR);
+  el.resetNoteLineColorBtn.classList.toggle("hidden", isDefaultLineColor);
+
+  const showWarning = options.noteStyle !== "none"
+    && notesAreaWouldBeEmpty(options, state.sourceAspectRatio);
+  el.notesAreaWarning.classList.toggle("hidden", !showWarning);
+
+  el.headerFields.classList.toggle("hidden", !options.headerEnabled);
+  el.headerTextField.classList.toggle("hidden", options.headerSource === "titlePageText");
+  el.footerFields.classList.toggle("hidden", !options.footerEnabled);
+  el.footerTextField.classList.toggle("hidden", options.footerSource === "titlePageText");
+  el.headerFooterHint.classList.toggle("hidden", !(options.headerEnabled || options.footerEnabled));
+
+  el.pageNumberIncludesTitlePageField.classList.toggle(
+    "hidden",
+    !(options.showPageNumbers && options.titlePageEnabled)
+  );
 
   el.slideScaleOut.textContent = `${Math.round(options.slideScale * 100)} %`;
   el.lineSpacingOut.textContent = `${Math.round(options.lineSpacingPoints)} pt`;
@@ -250,6 +308,18 @@ bindSelect(el.gridArrangement, "gridArrangement");
 bindSelect(el.noteStyle, "noteStyle");
 bindRange(el.slideScale, "slideScale");
 bindRange(el.lineSpacingPoints, "lineSpacingPoints");
+bindSelect(el.noteLineStyle, "noteLineStyle");
+el.noteLineColor.addEventListener("input", () => {
+  // <input type="color"> ne permet pas de régler l'opacité (contrairement au ColorPicker
+  // SwiftUI) : même limitation déjà acceptée pour titlePageFontColor ci-dessous.
+  options.noteLineColor = hexToRgb01(el.noteLineColor.value);
+  onOptionsChanged();
+});
+el.resetNoteLineColorBtn.addEventListener("click", () => {
+  options.noteLineColor = { ...DEFAULT_NOTE_LINE_COLOR };
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  onOptionsChanged();
+});
 
 bindSelect(el.pageSize, "pageSize");
 bindSelect(el.orientation, "orientation");
@@ -279,7 +349,27 @@ el.italicToggle.addEventListener("click", () => {
   onOptionsChanged();
 });
 
+bindCheckbox(el.headerEnabled, "headerEnabled");
+el.headerUseTitlePageText.addEventListener("change", () => {
+  options.headerSource = el.headerUseTitlePageText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.headerText.addEventListener("input", () => {
+  options.headerText = el.headerText.value;
+  onOptionsChanged();
+});
+bindCheckbox(el.footerEnabled, "footerEnabled");
+el.footerUseTitlePageText.addEventListener("change", () => {
+  options.footerSource = el.footerUseTitlePageText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.footerText.addEventListener("input", () => {
+  options.footerText = el.footerText.value;
+  onOptionsChanged();
+});
+
 bindCheckbox(el.showPageNumbers, "showPageNumbers");
+bindCheckbox(el.pageNumberIncludesTitlePage, "pageNumberIncludesTitlePage");
 bindCheckbox(el.showSlideNumbers, "showSlideNumbers");
 
 // ---------------------------------------------------------------------------------------
@@ -426,6 +516,7 @@ async function loadSourceFile(file) {
     state.sourceFile = file;
     state.sourceBytes = bytes;
     state.sourcePageCount = pageCount;
+    state.sourceAspectRatio = await sourceAspectRatio(bytes);
     state.previewReady = false;
 
     el.dropEmpty.classList.add("hidden");
@@ -437,6 +528,7 @@ async function loadSourceFile(file) {
     el.exportBtn.classList.remove("hidden");
     el.toolbar.classList.remove("hidden");
     updateExportEnabled();
+    updateConditionalVisibility();
 
     scheduleRegeneratePreview();
   } catch {
