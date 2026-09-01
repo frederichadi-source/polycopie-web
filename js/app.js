@@ -4,7 +4,7 @@
 // serveur.
 
 import { t, getLang, setLang } from "./i18n.js";
-import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice, DEFAULT_NOTE_LINE_COLOR } from "./store.js";
+import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice } from "./store.js";
 import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatio } from "./pdfEngine.js";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
@@ -87,7 +87,8 @@ const el = {
   noteLineStyle: $("noteLineStyle"),
   noteLineColorField: $("noteLineColorField"),
   noteLineColor: $("noteLineColor"),
-  resetNoteLineColorBtn: $("resetNoteLineColorBtn"),
+  noteLineOpacity: $("noteLineOpacity"),
+  noteLineColorReset: $("noteLineColorReset"),
   notesAreaWarning: $("notesAreaWarning"),
 
   pageSize: $("pageSize"),
@@ -111,15 +112,15 @@ const el = {
 
   headerEnabled: $("headerEnabled"),
   headerFields: $("headerFields"),
-  headerUseTitlePageText: $("headerUseTitlePageText"),
+  headerUsesTitleText: $("headerUsesTitleText"),
   headerTextField: $("headerTextField"),
   headerText: $("headerText"),
+
   footerEnabled: $("footerEnabled"),
   footerFields: $("footerFields"),
-  footerUseTitlePageText: $("footerUseTitlePageText"),
+  footerUsesTitleText: $("footerUsesTitleText"),
   footerTextField: $("footerTextField"),
   footerText: $("footerText"),
-  headerFooterHint: $("headerFooterHint"),
 
   showPageNumbers: $("showPageNumbers"),
   pageNumberIncludesTitlePageField: $("pageNumberIncludesTitlePageField"),
@@ -195,6 +196,7 @@ function populateFieldsFromOptions() {
   el.lineSpacingPoints.value = String(options.lineSpacingPoints);
   el.noteLineStyle.value = options.noteLineStyle;
   el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
 
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
@@ -210,10 +212,11 @@ function populateFieldsFromOptions() {
   el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
 
   el.headerEnabled.checked = options.headerEnabled;
-  el.headerUseTitlePageText.checked = options.headerSource === "titlePageText";
+  el.headerUsesTitleText.checked = options.headerSource === "titlePageText";
   el.headerText.value = options.headerText;
+
   el.footerEnabled.checked = options.footerEnabled;
-  el.footerUseTitlePageText.checked = options.footerSource === "titlePageText";
+  el.footerUsesTitleText.checked = options.footerSource === "titlePageText";
   el.footerText.value = options.footerText;
 
   el.showPageNumbers.checked = options.showPageNumbers;
@@ -221,14 +224,6 @@ function populateFieldsFromOptions() {
   el.showSlideNumbers.checked = options.showSlideNumbers;
 
   updateConditionalVisibility();
-}
-
-/** Compare deux couleurs RGBA {r,g,b,a} avec une tolérance flottante — port de la
- * comparaison `Equatable` utilisée côté Swift/SwiftUI pour l'affichage du bouton de
- * réinitialisation de la couleur des lignes. */
-function colorsEqual(a, b) {
-  const eps = 0.002;
-  return Math.abs(a.r - b.r) < eps && Math.abs(a.g - b.g) < eps && Math.abs(a.b - b.b) < eps && Math.abs(a.a - b.a) < eps;
 }
 
 function updateConditionalVisibility() {
@@ -244,31 +239,40 @@ function updateConditionalVisibility() {
   }
 
   el.noteDependentFields.classList.toggle("hidden", options.noteStyle === "none");
+  el.noteLineColorField.classList.toggle("hidden", options.noteLineStyle === "none");
+  // Le bouton de reset reste toujours dans le DOM (voir index.html) — seule sa visibilité
+  // change, via `.invisible` (garde sa place) plutôt que `.hidden` (la libère) : un bouton
+  // qui apparaît/disparaît changerait la hauteur de la ligne, d'où le petit "saut" observé
+  // avant ce correctif.
+  // Comparaison via le hex arrondi (et non les floats bruts) : un aller-retour par
+  // `<input type="color">` perd de la précision (191/255 = 0.7490196... ≠ 0.75 exactement),
+  // ce qui rendait la comparaison de floats bruts fausse dès la moindre interaction et
+  // laissait le bouton visible en permanence, même de retour sur le gris par défaut.
+  const defaultLineColor = defaultOptions().noteLineColor;
+  const isDefaultLineColor =
+    rgb01ToHex(options.noteLineColor) === rgb01ToHex(defaultLineColor) &&
+    options.noteLineColor.a === defaultLineColor.a;
+  el.noteLineColorReset.classList.toggle("invisible", isDefaultLineColor);
+  el.notesAreaWarning.classList.toggle(
+    "hidden",
+    !notesAreaWouldBeEmpty(options, state.sourceAspectRatio)
+  );
+
   el.titlePageFields.classList.toggle("hidden", !options.titlePageEnabled);
   el.textPositionField.classList.toggle("hidden", !options.titlePageIncludesFirstSlide);
-
-  el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
-  el.italicToggle.classList.toggle("active", options.titlePageFontItalic);
-
-  const showLineColor = options.noteStyle !== "none" && options.noteLineStyle !== "none";
-  el.noteLineColorField.classList.toggle("hidden", !showLineColor);
-  const isDefaultLineColor = colorsEqual(options.noteLineColor, DEFAULT_NOTE_LINE_COLOR);
-  el.resetNoteLineColorBtn.classList.toggle("hidden", isDefaultLineColor);
-
-  const showWarning = options.noteStyle !== "none"
-    && notesAreaWouldBeEmpty(options, state.sourceAspectRatio);
-  el.notesAreaWarning.classList.toggle("hidden", !showWarning);
 
   el.headerFields.classList.toggle("hidden", !options.headerEnabled);
   el.headerTextField.classList.toggle("hidden", options.headerSource === "titlePageText");
   el.footerFields.classList.toggle("hidden", !options.footerEnabled);
   el.footerTextField.classList.toggle("hidden", options.footerSource === "titlePageText");
-  el.headerFooterHint.classList.toggle("hidden", !(options.headerEnabled || options.footerEnabled));
 
   el.pageNumberIncludesTitlePageField.classList.toggle(
     "hidden",
     !(options.showPageNumbers && options.titlePageEnabled)
   );
+
+  el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
+  el.italicToggle.classList.toggle("active", options.titlePageFontItalic);
 
   el.slideScaleOut.textContent = `${Math.round(options.slideScale * 100)} %`;
   el.lineSpacingOut.textContent = `${Math.round(options.lineSpacingPoints)} pt`;
@@ -309,15 +313,20 @@ bindSelect(el.noteStyle, "noteStyle");
 bindRange(el.slideScale, "slideScale");
 bindRange(el.lineSpacingPoints, "lineSpacingPoints");
 bindSelect(el.noteLineStyle, "noteLineStyle");
-el.noteLineColor.addEventListener("input", () => {
-  // <input type="color"> ne permet pas de régler l'opacité (contrairement au ColorPicker
-  // SwiftUI) : même limitation déjà acceptée pour titlePageFontColor ci-dessous.
-  options.noteLineColor = hexToRgb01(el.noteLineColor.value);
+function onNoteLineColorInput() {
+  options.noteLineColor = { ...hexToRgb01(el.noteLineColor.value), a: options.noteLineColor.a };
+  onOptionsChanged();
+}
+el.noteLineColor.addEventListener("input", onNoteLineColorInput);
+el.noteLineColor.addEventListener("change", onNoteLineColorInput);
+el.noteLineOpacity.addEventListener("input", () => {
+  options.noteLineColor = { ...options.noteLineColor, a: parseFloat(el.noteLineOpacity.value) };
   onOptionsChanged();
 });
-el.resetNoteLineColorBtn.addEventListener("click", () => {
-  options.noteLineColor = { ...DEFAULT_NOTE_LINE_COLOR };
+el.noteLineColorReset.addEventListener("click", () => {
+  options.noteLineColor = { ...defaultOptions().noteLineColor };
   el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
   onOptionsChanged();
 });
 
@@ -350,17 +359,18 @@ el.italicToggle.addEventListener("click", () => {
 });
 
 bindCheckbox(el.headerEnabled, "headerEnabled");
-el.headerUseTitlePageText.addEventListener("change", () => {
-  options.headerSource = el.headerUseTitlePageText.checked ? "titlePageText" : "custom";
+el.headerUsesTitleText.addEventListener("change", () => {
+  options.headerSource = el.headerUsesTitleText.checked ? "titlePageText" : "custom";
   onOptionsChanged();
 });
 el.headerText.addEventListener("input", () => {
   options.headerText = el.headerText.value;
   onOptionsChanged();
 });
+
 bindCheckbox(el.footerEnabled, "footerEnabled");
-el.footerUseTitlePageText.addEventListener("change", () => {
-  options.footerSource = el.footerUseTitlePageText.checked ? "titlePageText" : "custom";
+el.footerUsesTitleText.addEventListener("change", () => {
+  options.footerSource = el.footerUsesTitleText.checked ? "titlePageText" : "custom";
   onOptionsChanged();
 });
 el.footerText.addEventListener("input", () => {
@@ -516,7 +526,7 @@ async function loadSourceFile(file) {
     state.sourceFile = file;
     state.sourceBytes = bytes;
     state.sourcePageCount = pageCount;
-    state.sourceAspectRatio = await sourceAspectRatio(bytes);
+    state.sourceAspectRatio = sourceAspectRatio(doc);
     state.previewReady = false;
 
     el.dropEmpty.classList.add("hidden");
@@ -574,6 +584,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   state.sourceFile = null;
   state.sourceBytes = null;
   state.sourcePageCount = 0;
+  state.sourceAspectRatio = 16 / 9;
   state.previewReady = false;
 
   el.dropEmpty.classList.remove("hidden");
@@ -583,6 +594,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   el.toolbar.classList.add("hidden");
   clearPreview();
   hideError();
+  updateConditionalVisibility();
 });
 
 // Vit dans la section Préréglages plutôt qu'à côté du PDF chargé : son action porte

@@ -19,39 +19,6 @@ const GRAY_BORDER = rgb(0.6, 0.6, 0.6);
 const GRAY_LABEL = rgb(0.45, 0.45, 0.45);
 const WHITE = rgb(1, 1, 1);
 
-/** Motif de tirets transmis à `drawLine` (dashArray) — port de `NoteLineStyle.dashPattern`.
- * `null` = trait continu. */
-function dashPatternFor(style) {
-  switch (style) {
-    case "dashed": return [6, 4];
-    case "dotted": return [1.5, 3];
-    default: return null; // none, solid
-  }
-}
-
-/** Hauteur réservée pour chaque bandeau d'en-tête/pied de page (texte et/ou numéro de
- * page) — port de `HandoutGenerator.headerFooterBandHeight`. Exportée pour réutilisation
- * par `notesAreaWouldBeEmpty`. */
-export const HEADER_FOOTER_BAND_HEIGHT = 20;
-const HEADER_FOOTER_FONT_SIZE = 8.5;
-const HEADER_FOOTER_EDGE_INSET = 8;
-
-/** Texte résolu de l'en-tête, selon `headerSource` — vide si l'en-tête n'est pas activé ou
- * si le texte source (personnalisé ou page de titre) est vide. Port de
- * `resolvedHeaderText`. Exportée pour réutilisation par `notesAreaWouldBeEmpty` et par l'UI. */
-export function resolvedHeaderText(options) {
-  if (!options.headerEnabled) return "";
-  const text = options.headerSource === "titlePageText" ? options.titlePageText : options.headerText;
-  return text.trim();
-}
-
-/** Port de `resolvedFooterText`. */
-export function resolvedFooterText(options) {
-  if (!options.footerEnabled) return "";
-  const text = options.footerSource === "titlePageText" ? options.titlePageText : options.footerText;
-  return text.trim();
-}
-
 /** Rectangle simple {x, y, width, height} — équivalent maison de CGRect. */
 function inset(rect, dx, dy) {
   return { x: rect.x + dx, y: rect.y + dy, width: rect.width - 2 * dx, height: rect.height - 2 * dy };
@@ -181,16 +148,23 @@ function drawSlideOnPage(page, embeddedPage, rect, showNumber, number, labelFont
   }
 }
 
+/** Motif de tirets pour pdf-lib (option `dashArray`), équivalent de `NoteLineStyle.dashPattern`
+ * côté Swift ; `null` = trait continu. */
+const DASH_PATTERNS = {
+  solid: null,
+  dashed: [6, 4],
+  dotted: [1.5, 3]
+};
+
 /** Port de `drawNoteLines` : lignes horizontales ancrées sur la grille globale de la page
  * (`gridOriginY`), pour que deux zones adjacentes s'alignent parfaitement. `style === "none"`
- * conserve la zone de notes (l'espace reste réservé) mais ne dessine aucun trait. */
+ * conserve la zone de notes (l'espace reste réservé) mais ne dessine aucun trait — une zone
+ * vierge plutôt qu'une zone lignée. */
 function drawNoteLines(page, rect, spacing, gridOriginY, style, color) {
   if (style === "none") return;
   if (rect.width <= 0 || rect.height <= 0 || spacing <= 0) return;
-  const dashArray = dashPatternFor(style);
+  const dashArray = DASH_PATTERNS[style] || undefined;
   const lineColor = rgb(color.r, color.g, color.b);
-  const opacity = color.a;
-
   let step = 0;
   while (true) {
     const y = gridOriginY - spacing * (step + 1);
@@ -201,50 +175,62 @@ function drawNoteLines(page, rect, spacing, gridOriginY, style, color) {
         end: { x: rect.x + rect.width, y },
         thickness: 0.5,
         color: lineColor,
-        opacity,
-        ...(dashArray ? { dashArray } : {})
+        opacity: color.a,
+        dashArray
       });
     }
     step++;
   }
 }
 
-/** Tronque `text` avec des points de suspension s'il ne tient pas dans `maxWidth`, à la
- * manière de `NSLineBreakMode.byTruncatingTail` — jamais de retour à la ligne. Port du
- * comportement de `drawSingleLine` côté Swift (pdf-lib n'a pas d'équivalent intégré). */
+/** Hauteur réservée pour chaque bandeau d'en-tête/pied de page (texte et/ou numéro de page). */
+const HEADER_FOOTER_BAND_HEIGHT = 20;
+const HEADER_FOOTER_FONT_SIZE = 8.5;
+/** Marge de sécurité entre le texte/numéro et le bord physique de la page (haut pour
+ * l'en-tête, bas pour le pied de page) : sans cette marge, le texte se retrouvait collé au
+ * bord, dans la zone que beaucoup d'imprimantes ne reproduisent pas fidèlement. */
+const HEADER_FOOTER_EDGE_INSET = 8;
+
+/** Texte à afficher dans l'en-tête/le pied de page, résolu selon `headerSource`/`footerSource`
+ * — vide si non activé ou si le texte source (personnalisé ou page de titre) est vide. */
+function resolvedHeaderText(options) {
+  if (!options.headerEnabled) return "";
+  const text = options.headerSource === "titlePageText" ? options.titlePageText : options.headerText;
+  return text.trim();
+}
+function resolvedFooterText(options) {
+  if (!options.footerEnabled) return "";
+  const text = options.footerSource === "titlePageText" ? options.titlePageText : options.footerText;
+  return text.trim();
+}
+
+/** Tronque `text` avec des points de suspension pour qu'il tienne dans `maxWidth`, à la
+ * manière de `lineBreakMode = .byTruncatingTail` côté Swift — jamais de retour à la ligne ni
+ * de débordement, contrairement à `drawWrappedText`. */
 function truncateToWidth(text, font, fontSize, maxWidth) {
   if (font.widthOfTextAtSize(text, fontSize) <= maxWidth) return text;
-  const ellipsis = "…";
-  if (font.widthOfTextAtSize(ellipsis, fontSize) > maxWidth) return "";
-  let lo = 0;
-  let hi = text.length;
-  while (lo < hi) {
-    const mid = Math.ceil((lo + hi) / 2);
-    const candidate = text.slice(0, mid) + ellipsis;
-    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
-      lo = mid;
-    } else {
-      hi = mid - 1;
-    }
+  let truncated = text;
+  while (truncated.length > 0 && font.widthOfTextAtSize(`${truncated}…`, fontSize) > maxWidth) {
+    truncated = truncated.slice(0, -1);
   }
-  return text.slice(0, lo) + ellipsis;
+  return truncated.length > 0 ? `${truncated}…` : "";
 }
 
-/** Dessine `text` sur une seule ligne dans `rect`, tronquée si besoin — port de
- * `drawSingleLine`. Utilisée pour l'en-tête, le pied de page et le numéro de page. */
-function drawSingleLine(page, text, rect, font, alignment, color) {
-  if (rect.width <= 0 || rect.height <= 0 || !text) return;
+/** Dessine `text` sur une seule ligne, tronquée si besoin, alignée dans `rect`. */
+function drawSingleLine(page, text, rect, font, alignment) {
+  if (!text || rect.width <= 0 || rect.height <= 0) return;
   const truncated = truncateToWidth(text, font, HEADER_FOOTER_FONT_SIZE, rect.width);
-  const lineWidth = font.widthOfTextAtSize(truncated, HEADER_FOOTER_FONT_SIZE);
+  if (!truncated) return;
+  const textWidth = font.widthOfTextAtSize(truncated, HEADER_FOOTER_FONT_SIZE);
   let x = rect.x;
-  if (alignment === "center") x = rect.x + (rect.width - lineWidth) / 2;
-  else if (alignment === "right") x = rect.x + rect.width - lineWidth;
-  const y = rect.y + (rect.height - HEADER_FOOTER_FONT_SIZE) / 2;
-  page.drawText(truncated, { x, y, size: HEADER_FOOTER_FONT_SIZE, font, color });
+  if (alignment === "center") x = rect.x + (rect.width - textWidth) / 2;
+  else if (alignment === "right") x = rect.x + rect.width - textWidth;
+  page.drawText(truncated, { x, y: rect.y, size: HEADER_FOOTER_FONT_SIZE, font, color: GRAY_LABEL });
 }
 
-/** Bandeau de texte en haut de page (jamais sur la page de titre) — port de
- * `drawHeaderBand`. */
+/** Bandeau de texte en haut de page (jamais sur la page de titre). L'inset horizontal
+ * reprend la marge de page choisie par l'utilisateur, pour que le texte s'aligne avec les
+ * bords gauche/droite de la grille de diapositives plutôt que d'être excentré. */
 function drawHeaderBand(page, text, pageSize, margin, font) {
   if (!text) return;
   const rect = {
@@ -253,13 +239,17 @@ function drawHeaderBand(page, text, pageSize, margin, font) {
     width: pageSize.width - 2 * margin,
     height: HEADER_FOOTER_BAND_HEIGHT - HEADER_FOOTER_EDGE_INSET
   };
-  drawSingleLine(page, text, rect, font, "center", GRAY_LABEL);
+  drawSingleLine(page, text, rect, font, "center");
 }
 
-/** Bandeau de pied de page : texte et numéro de page partagent la même bande — port de
- * `drawFooterBand`. Si les deux sont présents, le numéro est ancré en bas à droite dans une
- * zone de largeur fixe séparée du texte par une marge, pour qu'ils ne se chevauchent jamais.
- * `pageNumber` est `null` quand la numérotation est désactivée pour cette page. */
+/** Bandeau de pied de page : texte et numéro de page partagent la même bande plutôt que d'en
+ * réserver une chacun.
+ * - Si les deux sont présents, le numéro est ancré dans le coin en bas à droite, dans une
+ *   zone de largeur fixe séparée du texte par une vraie marge (`numberGap`) : les deux zones
+ *   ne se touchent jamais, donc aucun chevauchement possible même si le texte est long (il
+ *   est de toute façon tronqué avant d'atteindre cette limite).
+ * - Si le texte seul ou le numéro seul est présent, il reste centré, comme avant.
+ */
 function drawFooterBand(page, pageNumber, footerText, pageSize, margin, font) {
   if (pageNumber === null && !footerText) return;
   const bandRect = {
@@ -270,11 +260,11 @@ function drawFooterBand(page, pageNumber, footerText, pageSize, margin, font) {
   };
 
   if (!footerText) {
-    if (pageNumber !== null) drawSingleLine(page, String(pageNumber), bandRect, font, "center", GRAY_LABEL);
+    if (pageNumber !== null) drawSingleLine(page, String(pageNumber), bandRect, font, "center");
     return;
   }
   if (pageNumber === null) {
-    drawSingleLine(page, footerText, bandRect, font, "center", GRAY_LABEL);
+    drawSingleLine(page, footerText, bandRect, font, "center");
     return;
   }
 
@@ -282,8 +272,8 @@ function drawFooterBand(page, pageNumber, footerText, pageSize, margin, font) {
   const numberGap = 6;
   const textRect = { x: bandRect.x, y: bandRect.y, width: bandRect.width - numberWidth - numberGap, height: bandRect.height };
   const numberRect = { x: bandRect.x + bandRect.width - numberWidth, y: bandRect.y, width: numberWidth, height: bandRect.height };
-  drawSingleLine(page, footerText, textRect, font, "center", GRAY_LABEL);
-  drawSingleLine(page, String(pageNumber), numberRect, font, "right", GRAY_LABEL);
+  drawSingleLine(page, footerText, textRect, font, "center");
+  drawSingleLine(page, String(pageNumber), numberRect, font, "right");
 }
 
 /** Port de `drawTitlePage`. */
@@ -352,6 +342,38 @@ async function embedTitleFont(pdfDoc, options) {
 }
 
 /**
+ * Indique si, avec ces réglages, la zone de prise de notes serait trop réduite pour qu'une
+ * ligne y soit dessinée — elle resterait vide alors que `noteStyle` prévoit une zone de
+ * notes. Reproduit la géométrie exacte de `generateHandout`/`layoutCell` sans avoir besoin
+ * d'un PDF source réel, pour un avertissement en direct dans le panneau de réglages.
+ * `aspectRatio` doit être le ratio réel du PDF chargé quand il est disponible ; à défaut,
+ * 16:9 est une hypothèse raisonnable.
+ */
+export function notesAreaWouldBeEmpty(options, aspectRatio = 16 / 9) {
+  if (options.noteStyle === "none") return false;
+  const { columns, rows } = resolvedGrid(options);
+  if (columns <= 0 || rows <= 0) return false;
+
+  const pageSize = resolvedPageSize(options);
+  const margin = options.marginPoints;
+  const headerText = resolvedHeaderText(options);
+  const footerText = resolvedFooterText(options);
+  const footerReserve = footerText || options.showPageNumbers ? HEADER_FOOTER_BAND_HEIGHT : 0;
+  const headerReserve = headerText ? HEADER_FOOTER_BAND_HEIGHT : 0;
+
+  const contentWidth = pageSize.width - margin * 2;
+  const contentHeight = pageSize.height - margin * 2 - footerReserve - headerReserve;
+  if (contentWidth <= 0 || contentHeight <= 0) return true;
+
+  const cellWidth = contentWidth / columns;
+  const cellHeight = contentHeight / rows;
+  const cell = inset({ x: 0, y: 0, width: cellWidth, height: cellHeight }, 8, 8);
+
+  const { notesRects } = layoutCell(cell, options.noteStyle, aspectRatio, options.slideScale);
+  return notesRects.length === 0;
+}
+
+/**
  * Génère le PDF de polycopié à partir des octets du PDF source et des réglages.
  * @param {Uint8Array} sourceBytes
  * @param {object} options
@@ -379,12 +401,14 @@ export async function generateHandout(sourceBytes, options, onProgress) {
   const slotsPerPage = columns * rows;
   const margin = options.marginPoints;
 
-  // Texte résolu de l'en-tête/pied de page — vide si la case correspondante n'est pas
-  // cochée. Un bandeau de pied de page est réservé dès que du texte OU la numérotation y
-  // figurent : les deux se partagent alors la même bande (voir drawFooterBand).
+  // Texte résolu de l'en-tête/pied de page (source "personnalisé" ou reprise du texte de la
+  // page de titre) — vide si la case correspondante n'est pas cochée.
   const headerText = resolvedHeaderText(options);
   const footerText = resolvedFooterText(options);
-  const footerReserve = (footerText || options.showPageNumbers) ? HEADER_FOOTER_BAND_HEIGHT : 0;
+  // Un bandeau de pied de page est réservé dès que du texte OU la numérotation y figurent :
+  // les deux se partagent alors la même bande (voir drawFooterBand), plutôt que d'empiler
+  // deux espaces réservés distincts.
+  const footerReserve = footerText || options.showPageNumbers ? HEADER_FOOTER_BAND_HEIGHT : 0;
   const headerReserve = headerText ? HEADER_FOOTER_BAND_HEIGHT : 0;
   const contentRect = {
     x: margin,
@@ -410,7 +434,7 @@ export async function generateHandout(sourceBytes, options, onProgress) {
   }
 
   // Page de titre optionnelle. L'en-tête/pied de page ne sont jamais dessinés sur la page de
-  // titre (qui a sa propre mise en page) ; seul son numéro de page peut y figurer, si
+  // titre (qui a sa propre mise en page) ; seul son numéro peut y figurer, si
   // `pageNumberIncludesTitlePage` est coché.
   if (options.titlePageEnabled) {
     outputPageNumber++;
@@ -459,11 +483,9 @@ export async function generateHandout(sourceBytes, options, onProgress) {
     if (footerText || options.showPageNumbers) {
       // Si la page de titre n'est pas comptée dans la numérotation, la première page de
       // contenu redémarre à 1 (voir pageNumberIncludesTitlePage).
-      const displayNumber = (titlePageWasDrawn && !options.pageNumberIncludesTitlePage)
-        ? outputPageNumber - 1 : outputPageNumber;
+      const displayNumber = titlePageWasDrawn && !options.pageNumberIncludesTitlePage ? outputPageNumber - 1 : outputPageNumber;
       drawFooterBand(page, options.showPageNumbers ? displayNumber : null, footerText, pageSize, margin, labelFont);
     }
-
     if (onProgress) onProgress(outputPageNumber);
     // Laisse la main au thread UI entre deux pages sur les gros documents.
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -476,54 +498,24 @@ export async function generateHandout(sourceBytes, options, onProgress) {
   }
 }
 
-/**
- * Indique si, avec ces réglages, la zone de prise de notes serait trop réduite pour qu'une
- * ligne y soit dessinée — reproduit la géométrie exacte de `generateHandout`/`layoutCell`
- * sans PDF source réel, pour un avertissement en direct dans le panneau de réglages. Port de
- * `notesAreaWouldBeEmpty`. `slideAspectRatio` doit être le ratio réel du PDF chargé quand il
- * est disponible ; à défaut, 16:9 est une hypothèse raisonnable.
- */
-export function notesAreaWouldBeEmpty(options, slideAspectRatio = 16 / 9) {
-  if (options.noteStyle === "none") return false;
-  const { columns, rows } = resolvedGrid(options);
-  if (columns <= 0 || rows <= 0) return false;
-
-  const pageSize = resolvedPageSize(options);
-  const margin = options.marginPoints;
-  const headerText = resolvedHeaderText(options);
-  const footerText = resolvedFooterText(options);
-  const footerReserve = (footerText || options.showPageNumbers) ? HEADER_FOOTER_BAND_HEIGHT : 0;
-  const headerReserve = headerText ? HEADER_FOOTER_BAND_HEIGHT : 0;
-
-  const contentWidth = pageSize.width - margin * 2;
-  const contentHeight = pageSize.height - margin * 2 - footerReserve - headerReserve;
-  if (contentWidth <= 0 || contentHeight <= 0) return true;
-
-  const cellWidth = contentWidth / columns;
-  const cellHeight = contentHeight / rows;
-  const cell = inset({ x: 0, y: 0, width: cellWidth, height: cellHeight }, 8, 8);
-
-  const { notesRects } = layoutCell(cell, options.noteStyle, slideAspectRatio, options.slideScale);
-  return notesRects.length === 0;
-}
-
-/** Ratio largeur/hauteur de la première page d'un PDF (octets), en tenant compte d'une
- * éventuelle rotation. Repli sur 4:3 si le document est illisible. Port de
- * `sourceAspectRatio`, utilisé par l'UI pour un avertissement fidèle à la géométrie réelle
- * du PDF chargé (voir `notesAreaWouldBeEmpty`). */
-export async function sourceAspectRatio(sourceBytes) {
-  try {
-    const doc = await PDFDocument.load(sourceBytes, { ignoreEncryption: true });
-    const firstPage = doc.getPage(0);
-    let { width, height } = firstPage.getSize();
-    const rotation = firstPage.getRotation().angle;
-    if (rotation === 90 || rotation === 270) [width, height] = [height, width];
-    if (width > 0 && height > 0) return width / height;
-  } catch {
-    // repli ci-dessous
-  }
-  return 4 / 3;
-}
-
 // Réexporté pour usage ailleurs (ex: lire le nombre de pages du PDF source importé).
 export { PDFDocument, degrees };
+
+/** Ratio largeur/hauteur de la première page du document, en tenant compte de sa rotation
+ * éventuelle (une page pivotée à 90°/270° a ses dimensions effectivement inversées). Repli
+ * sur 4:3 si le document est illisible pour une raison quelconque. Port de
+ * `HandoutGenerator.sourceAspectRatio(of:)` : utilisé pour que l'avertissement "trop peu de
+ * place" (voir `notesAreaWouldBeEmpty`) reflète la géométrie réelle du PDF chargé. */
+export function sourceAspectRatio(doc) {
+  try {
+    const page = doc.getPage(0);
+    const { width, height } = page.getSize();
+    const angle = ((page.getRotation().angle % 360) + 360) % 360;
+    const rotated = angle === 90 || angle === 270;
+    const w = rotated ? height : width;
+    const h = rotated ? width : height;
+    return h > 0 ? w / h : 4 / 3;
+  } catch {
+    return 4 / 3;
+  }
+}

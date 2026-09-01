@@ -2,10 +2,6 @@
 // Port de HandoutOptions + PresetStore (macOS) : modèle de réglages, valeurs par défaut,
 // et persistance dans localStorage (préréglages + derniers réglages utilisés).
 
-/** Couleur par défaut des lignes de la zone de notes — identique à
- * `CodableColor.defaultNoteLine` côté Swift. */
-export const DEFAULT_NOTE_LINE_COLOR = { r: 0.75, g: 0.75, b: 0.75, a: 1 };
-
 /** Valeurs par défaut, identiques à `HandoutOptions()` côté Swift. */
 export function defaultOptions() {
   return {
@@ -19,6 +15,8 @@ export function defaultOptions() {
     marginPoints: 28,
     lineSpacingPoints: 22,
     slideScale: 0.8,
+    noteLineStyle: "solid", // none | solid | dashed | dotted
+    noteLineColor: { r: 0.75, g: 0.75, b: 0.75, a: 1 },
     titlePageEnabled: false,
     titlePageIncludesFirstSlide: true,
     titlePageText: "",
@@ -29,18 +27,12 @@ export function defaultOptions() {
     titlePageFontItalic: false,
     titlePageFontSize: 15,
     titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 },
-    // Style de trait des lignes de notes, indépendant de noteStyle (qui ne décrit que la
-    // disposition de la zone) — voir NoteLineStyle côté Swift.
-    noteLineStyle: "solid", // none | solid | dashed | dotted
-    noteLineColor: { ...DEFAULT_NOTE_LINE_COLOR },
-    // En-tête / pied de page — voir HeaderFooterSource côté Swift.
     headerEnabled: false,
     headerText: "",
     headerSource: "custom", // custom | titlePageText
     footerEnabled: false,
     footerText: "",
     footerSource: "custom", // custom | titlePageText
-    // Si vrai (comportement historique), la page de titre compte comme la page 1.
     pageNumberIncludesTitlePage: true
   };
 }
@@ -76,15 +68,11 @@ export function resolvedGrid(options) {
   }
 }
 
-// --- Formats de papier, en points (72 pts/pouce), en orientation portrait ---
-const PAGE_SIZES = {
-  letter: { width: 612, height: 792 },
-  a4: { width: 595, height: 842 },
-  legal: { width: 612, height: 1008 }
-};
-
 export function resolvedPageSize(options) {
-  const base = PAGE_SIZES[options.pageSize] || PAGE_SIZES.letter;
+  const base =
+    options.pageSize === "a4" ? { width: 595, height: 842 } :
+    options.pageSize === "legal" ? { width: 612, height: 1008 } :
+    { width: 612, height: 792 };
   return options.orientation === "portrait" ? base : { width: base.height, height: base.width };
 }
 

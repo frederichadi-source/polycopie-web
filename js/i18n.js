@@ -24,11 +24,12 @@ export const STRINGS = {
   "Taille de la diapositive": { fr: "Taille de la diapositive", en: "Slide size" },
   "Espacement des lignes": { fr: "Espacement des lignes", en: "Line spacing" },
   "Style de ligne": { fr: "Style de ligne", en: "Line style" },
-  "Sans ligne (zone vierge)": { fr: "Sans ligne (zone vierge)", en: "No line (blank area)" },
+  "Sans ligne (zone vierge)": { fr: "Sans ligne (zone vierge)", en: "No lines (blank area)" },
   "Continue": { fr: "Continue", en: "Solid" },
   "Tirets": { fr: "Tirets", en: "Dashes" },
   "Pointillés": { fr: "Pointillés", en: "Dotted" },
   "Couleur des lignes": { fr: "Couleur des lignes", en: "Line color" },
+  "Opacité": { fr: "Opacité", en: "Opacity" },
   "Réinitialiser la couleur des lignes": { fr: "Réinitialiser la couleur des lignes", en: "Reset line color" },
   "Trop peu de place pour les lignes : la zone de notes restera vierge.": {
     fr: "Trop peu de place pour les lignes : la zone de notes restera vierge.",
