@@ -224,6 +224,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .color-opacity-row .icon-btn:hover { color: var(--text); }
 
+.color-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.color-row input[type="color"] { flex: 0 0 auto; width: 40px; }
+.color-row .icon-btn {
+  flex: 0 0 auto; border: none; background: none; padding: 2px 4px; font-size: 14px;
+  color: var(--text-tertiary); cursor: pointer;
+}
+.color-row .icon-btn:hover { color: var(--text); }
+
 .toggle-group { display: flex; gap: 6px; }
 .toggle-btn {
   border: 1px solid var(--border); background: var(--surface); border-radius: 8px;

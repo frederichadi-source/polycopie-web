@@ -31,6 +31,7 @@ export const STRINGS = {
   "Couleur des lignes": { fr: "Couleur des lignes", en: "Line color" },
   "Opacité": { fr: "Opacité", en: "Opacity" },
   "Réinitialiser la couleur des lignes": { fr: "Réinitialiser la couleur des lignes", en: "Reset line color" },
+  "Réinitialiser la couleur du texte": { fr: "Réinitialiser la couleur du texte", en: "Reset text color" },
   "Trop peu de place pour les lignes : la zone de notes restera vierge.": {
     fr: "Trop peu de place pour les lignes : la zone de notes restera vierge.",
     en: "Not enough room for lines: the notes area will remain blank."

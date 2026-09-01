@@ -109,6 +109,7 @@ const el = {
   titlePageFontSize: $("titlePageFontSize"),
   titleFontSizeOut: $("titleFontSizeOut"),
   titlePageFontColor: $("titlePageFontColor"),
+  titlePageFontColorReset: $("titlePageFontColorReset"),
 
   headerEnabled: $("headerEnabled"),
   headerFields: $("headerFields"),
@@ -260,6 +261,11 @@ function updateConditionalVisibility() {
 
   el.titlePageFields.classList.toggle("hidden", !options.titlePageEnabled);
   el.textPositionField.classList.toggle("hidden", !options.titlePageIncludesFirstSlide);
+  // Même logique que noteLineColorReset ci-dessus (bouton toujours dans le DOM, comparaison
+  // via le hex arrondi) — pas d'opacité ici, la couleur du texte n'en a pas.
+  const isDefaultTitleColor =
+    rgb01ToHex(options.titlePageFontColor) === rgb01ToHex(defaultOptions().titlePageFontColor);
+  el.titlePageFontColorReset.classList.toggle("invisible", isDefaultTitleColor);
 
   el.headerFields.classList.toggle("hidden", !options.headerEnabled);
   el.headerTextField.classList.toggle("hidden", options.headerSource === "titlePageText");
@@ -346,6 +352,11 @@ bindSelect(el.titlePageFont, "titlePageFont");
 bindRange(el.titlePageFontSize, "titlePageFontSize");
 el.titlePageFontColor.addEventListener("input", () => {
   options.titlePageFontColor = hexToRgb01(el.titlePageFontColor.value);
+  onOptionsChanged();
+});
+el.titlePageFontColorReset.addEventListener("click", () => {
+  options.titlePageFontColor = { ...defaultOptions().titlePageFontColor };
+  el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
   onOptionsChanged();
 });
 
