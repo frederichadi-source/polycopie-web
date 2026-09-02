@@ -4,8 +4,12 @@
 // serveur.
 
 import { t, getLang, setLang } from "./i18n.js";
-import { defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice } from "./store.js";
-import { generateHandout, HandoutError, PDFDocument } from "./pdfEngine.js";
+import {
+  defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
+  loadShowAdvancedOptions, saveShowAdvancedOptions,
+  DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
+} from "./store.js";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -22,11 +26,18 @@ const state = {
   sourceFile: null,
   sourceBytes: null,
   sourcePageCount: 0,
+  // Ratio largeur/hauteur réel du PDF chargé, utilisé pour l'avertissement "zone de notes
+  // trop réduite" — voir sourceAspectRatioOfDocument dans pdfEngine.js. 16:9 par défaut
+  // tant qu'aucun PDF n'est chargé (comme côté Swift).
+  sourceAspectRatio: 16 / 9,
   previewReady: false,
   batchFiles: [], // {id, file, status, errorMessage, outputBytes}
   batchOptionsSnapshot: null,
   batchProcessing: false,
-  editingPresetId: null
+  editingPresetId: null,
+  // Mode Essentiel/Avancé du panneau — persisté séparément de HandoutOptions (voir
+  // loadShowAdvancedOptions dans store.js).
+  showAdvancedOptions: loadShowAdvancedOptions()
 };
 
 let previewGeneration = 0;
@@ -51,6 +62,8 @@ const el = {
   sourceSlideCount: $("sourceSlideCount"),
 
   optionsPanel: $("optionsPanel"),
+  modeEssentialBtn: $("modeEssentialBtn"),
+  modeAdvancedBtn: $("modeAdvancedBtn"),
   exportBtn: $("exportBtn"),
   exportBtnToolbar: $("exportBtnToolbar"),
   toolbar: $("toolbar"),
@@ -83,6 +96,14 @@ const el = {
   slideScaleOut: $("slideScaleOut"),
   lineSpacingPoints: $("lineSpacingPoints"),
   lineSpacingOut: $("lineSpacingOut"),
+  noteLineStyle: $("noteLineStyle"),
+  noteLineColorField: $("noteLineColorField"),
+  noteLineColor: $("noteLineColor"),
+  resetNoteLineColorBtn: $("resetNoteLineColorBtn"),
+  noteLineOpacityField: $("noteLineOpacityField"),
+  noteLineOpacity: $("noteLineOpacity"),
+  noteLineOpacityOut: $("noteLineOpacityOut"),
+  notesAreaWarning: $("notesAreaWarning"),
 
   pageSize: $("pageSize"),
   orientation: $("orientation"),
@@ -101,9 +122,28 @@ const el = {
   italicToggle: $("italicToggle"),
   titlePageFontSize: $("titlePageFontSize"),
   titleFontSizeOut: $("titleFontSizeOut"),
+  titlePageColorField: $("titlePageColorField"),
   titlePageFontColor: $("titlePageFontColor"),
+  resetTitlePageColorBtn: $("resetTitlePageColorBtn"),
+  titlePageAddBlankPageAfter: $("titlePageAddBlankPageAfter"),
+  titlePageEssentialHint: $("titlePageEssentialHint"),
+
+  headerFooterSection: $("headerFooterSection"),
+  headerEnabled: $("headerEnabled"),
+  headerFields: $("headerFields"),
+  headerUseTitleText: $("headerUseTitleText"),
+  headerTextField: $("headerTextField"),
+  headerText: $("headerText"),
+  footerEnabled: $("footerEnabled"),
+  footerFields: $("footerFields"),
+  footerUseTitleText: $("footerUseTitleText"),
+  footerTextField: $("footerTextField"),
+  footerText: $("footerText"),
+  headerFooterHint: $("headerFooterHint"),
 
   showPageNumbers: $("showPageNumbers"),
+  pageNumberIncludesTitlePageField: $("pageNumberIncludesTitlePageField"),
+  pageNumberIncludesTitlePage: $("pageNumberIncludesTitlePage"),
   showSlideNumbers: $("showSlideNumbers"),
 
   resetSettingsBtn: $("resetSettingsBtn"),
@@ -173,6 +213,9 @@ function populateFieldsFromOptions() {
   el.noteStyle.value = options.noteStyle;
   el.slideScale.value = String(options.slideScale);
   el.lineSpacingPoints.value = String(options.lineSpacingPoints);
+  el.noteLineStyle.value = options.noteLineStyle;
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
 
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
@@ -186,14 +229,39 @@ function populateFieldsFromOptions() {
   el.titlePageFont.value = options.titlePageFont;
   el.titlePageFontSize.value = String(options.titlePageFontSize);
   el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
+  el.titlePageAddBlankPageAfter.checked = options.titlePageAddBlankPageAfter;
+
+  el.headerEnabled.checked = options.headerEnabled;
+  el.headerUseTitleText.checked = options.headerSource === "titlePageText";
+  el.headerText.value = options.headerText;
+  el.footerEnabled.checked = options.footerEnabled;
+  el.footerUseTitleText.checked = options.footerSource === "titlePageText";
+  el.footerText.value = options.footerText;
 
   el.showPageNumbers.checked = options.showPageNumbers;
+  el.pageNumberIncludesTitlePage.checked = options.pageNumberIncludesTitlePage;
   el.showSlideNumbers.checked = options.showSlideNumbers;
 
   updateConditionalVisibility();
 }
 
+/** Bascule tous les champs marqués `.advanced-only` / `.essential-only` selon le mode
+ * courant — équivalent du `if showAdvancedOptions { ... } else { ... }` côté Swift. */
+function applyModeVisibility() {
+  const advanced = state.showAdvancedOptions;
+  el.modeEssentialBtn.classList.toggle("active", !advanced);
+  el.modeAdvancedBtn.classList.toggle("active", advanced);
+  document.querySelectorAll(".advanced-only").forEach((node) => node.classList.toggle("hidden", !advanced));
+  document.querySelectorAll(".essential-only").forEach((node) => node.classList.toggle("hidden", advanced));
+}
+
+function colorsRoughlyEqual(a, b) {
+  return rgb01ToHex(a) === rgb01ToHex(b) && Math.abs(a.a - b.a) < 0.01;
+}
+
 function updateConditionalVisibility() {
+  applyModeVisibility();
+
   const showArrangement = hasArrangementChoice(options.slidesPerPage);
   el.arrangementField.classList.toggle("hidden", !showArrangement);
   const showHint = showArrangement && options.gridArrangement === "automatic";
@@ -206,8 +274,30 @@ function updateConditionalVisibility() {
   }
 
   el.noteDependentFields.classList.toggle("hidden", options.noteStyle === "none");
+  el.noteLineColorField.classList.toggle("hidden", options.noteLineStyle === "none");
+  el.noteLineOpacityField.classList.toggle("hidden", options.noteLineStyle === "none");
+  el.resetNoteLineColorBtn.classList.toggle("hidden", colorsRoughlyEqual(options.noteLineColor, DEFAULT_NOTE_LINE_COLOR));
+
+  const warn = notesAreaWouldBeEmpty(options, state.sourceAspectRatio);
+  el.notesAreaWarning.classList.toggle("hidden", !warn);
+
   el.titlePageFields.classList.toggle("hidden", !options.titlePageEnabled);
   el.textPositionField.classList.toggle("hidden", !options.titlePageIncludesFirstSlide);
+  el.titlePageEssentialHint.textContent = options.titlePageIncludesFirstSlide
+    ? t("La première diapositive sera utilisée comme page de titre.")
+    : t("Une page de titre sera ajoutée avant vos diapositives.");
+  el.resetTitlePageColorBtn.classList.toggle("hidden", colorsRoughlyEqual(options.titlePageFontColor, DEFAULT_TITLE_TEXT_COLOR));
+
+  el.headerFields.classList.toggle("hidden", !options.headerEnabled);
+  el.headerTextField.classList.toggle("hidden", options.headerSource === "titlePageText");
+  el.footerFields.classList.toggle("hidden", !options.footerEnabled);
+  el.footerTextField.classList.toggle("hidden", options.footerSource === "titlePageText");
+  el.headerFooterHint.classList.toggle("hidden", !(options.headerEnabled || options.footerEnabled));
+
+  el.pageNumberIncludesTitlePageField.classList.toggle(
+    "hidden",
+    !(state.showAdvancedOptions && options.showPageNumbers && options.titlePageEnabled)
+  );
 
   el.boldToggle.classList.toggle("active", options.titlePageFontWeight === "bold");
   el.italicToggle.classList.toggle("active", options.titlePageFontItalic);
@@ -216,6 +306,7 @@ function updateConditionalVisibility() {
   el.lineSpacingOut.textContent = `${Math.round(options.lineSpacingPoints)} pt`;
   el.marginOut.textContent = `${Math.round(options.marginPoints)} pt`;
   el.titleFontSizeOut.textContent = `${Math.round(options.titlePageFontSize)} pt`;
+  el.noteLineOpacityOut.textContent = `${Math.round(options.noteLineColor.a * 100)} %`;
 }
 
 function onOptionsChanged() {
@@ -251,6 +342,22 @@ bindSelect(el.noteStyle, "noteStyle");
 bindRange(el.slideScale, "slideScale");
 bindRange(el.lineSpacingPoints, "lineSpacingPoints");
 
+bindSelect(el.noteLineStyle, "noteLineStyle");
+el.noteLineColor.addEventListener("input", () => {
+  options.noteLineColor = { ...hexToRgb01(el.noteLineColor.value), a: options.noteLineColor.a };
+  onOptionsChanged();
+});
+el.noteLineOpacity.addEventListener("input", () => {
+  options.noteLineColor = { ...options.noteLineColor, a: parseFloat(el.noteLineOpacity.value) };
+  onOptionsChanged();
+});
+el.resetNoteLineColorBtn.addEventListener("click", () => {
+  options.noteLineColor = { ...DEFAULT_NOTE_LINE_COLOR };
+  el.noteLineColor.value = rgb01ToHex(options.noteLineColor);
+  el.noteLineOpacity.value = String(options.noteLineColor.a);
+  onOptionsChanged();
+});
+
 bindSelect(el.pageSize, "pageSize");
 bindSelect(el.orientation, "orientation");
 bindRange(el.marginPoints, "marginPoints");
@@ -269,6 +376,12 @@ el.titlePageFontColor.addEventListener("input", () => {
   options.titlePageFontColor = hexToRgb01(el.titlePageFontColor.value);
   onOptionsChanged();
 });
+el.resetTitlePageColorBtn.addEventListener("click", () => {
+  options.titlePageFontColor = { ...DEFAULT_TITLE_TEXT_COLOR };
+  el.titlePageFontColor.value = rgb01ToHex(options.titlePageFontColor);
+  onOptionsChanged();
+});
+bindCheckbox(el.titlePageAddBlankPageAfter, "titlePageAddBlankPageAfter");
 
 el.boldToggle.addEventListener("click", () => {
   options.titlePageFontWeight = options.titlePageFontWeight === "bold" ? "regular" : "bold";
@@ -280,7 +393,44 @@ el.italicToggle.addEventListener("click", () => {
 });
 
 bindCheckbox(el.showPageNumbers, "showPageNumbers");
+bindCheckbox(el.pageNumberIncludesTitlePage, "pageNumberIncludesTitlePage");
 bindCheckbox(el.showSlideNumbers, "showSlideNumbers");
+
+// ---------------------------------------------------------------------------------------
+// En-tête / Pied de page
+// ---------------------------------------------------------------------------------------
+
+bindCheckbox(el.headerEnabled, "headerEnabled");
+el.headerUseTitleText.addEventListener("change", () => {
+  options.headerSource = el.headerUseTitleText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.headerText.addEventListener("input", () => {
+  options.headerText = el.headerText.value;
+  onOptionsChanged();
+});
+
+bindCheckbox(el.footerEnabled, "footerEnabled");
+el.footerUseTitleText.addEventListener("change", () => {
+  options.footerSource = el.footerUseTitleText.checked ? "titlePageText" : "custom";
+  onOptionsChanged();
+});
+el.footerText.addEventListener("input", () => {
+  options.footerText = el.footerText.value;
+  onOptionsChanged();
+});
+
+// ---------------------------------------------------------------------------------------
+// Mode Essentiel / Avancé
+// ---------------------------------------------------------------------------------------
+
+function setAdvancedMode(value) {
+  state.showAdvancedOptions = value;
+  saveShowAdvancedOptions(value);
+  updateConditionalVisibility();
+}
+el.modeEssentialBtn.addEventListener("click", () => setAdvancedMode(false));
+el.modeAdvancedBtn.addEventListener("click", () => setAdvancedMode(true));
 
 // ---------------------------------------------------------------------------------------
 // Préréglages
@@ -426,6 +576,7 @@ async function loadSourceFile(file) {
     state.sourceFile = file;
     state.sourceBytes = bytes;
     state.sourcePageCount = pageCount;
+    state.sourceAspectRatio = sourceAspectRatioOfDocument(doc);
     state.previewReady = false;
 
     el.dropEmpty.classList.add("hidden");
@@ -437,6 +588,7 @@ async function loadSourceFile(file) {
     el.exportBtn.classList.remove("hidden");
     el.toolbar.classList.remove("hidden");
     updateExportEnabled();
+    updateConditionalVisibility();
 
     scheduleRegeneratePreview();
   } catch {
@@ -482,6 +634,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   state.sourceFile = null;
   state.sourceBytes = null;
   state.sourcePageCount = 0;
+  state.sourceAspectRatio = 16 / 9;
   state.previewReady = false;
 
   el.dropEmpty.classList.remove("hidden");
@@ -491,6 +644,7 @@ el.clearSourceBtn.addEventListener("click", () => {
   el.toolbar.classList.add("hidden");
   clearPreview();
   hideError();
+  updateConditionalVisibility();
 });
 
 // Vit dans la section Préréglages plutôt qu'à côté du PDF chargé : son action porte

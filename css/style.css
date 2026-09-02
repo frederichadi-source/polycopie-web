@@ -9,9 +9,13 @@
   --layout: #4f66d9;
   --paper: #8c6133;
   --title: #b83d75;
+  --headerfooter: #33739f;
   --options: #2e8c75;
   --success: #2f9e44;
   --failure: #e03131;
+  /* Avertissement non bloquant (ex: zone de notes trop réduite) — distinct de --failure,
+     qui signale un échec. Voir AppTheme.warning côté Swift. */
+  --warning: #d9822b;
 
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -175,8 +179,36 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .opt-section[data-accent="layout"] .section-icon { color: var(--layout); }
 .opt-section[data-accent="paper"] .section-icon { color: var(--paper); }
 .opt-section[data-accent="title"] .section-icon { color: var(--title); }
+.opt-section[data-accent="headerfooter"] .section-icon { color: var(--headerfooter); }
 .opt-section[data-accent="options"] .section-icon { color: var(--options); }
 .section-icon { font-size: 14px; }
+
+/* ---------- Mode Essentiel / Avancé ---------- */
+.mode-tabbar-row { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+.mode-tabbar {
+  display: flex; gap: 3px; padding: 3px; border-radius: 8px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  flex: 1;
+}
+.mode-tab {
+  flex: 1; border: none; background: transparent; border-radius: 6px;
+  padding: 6px 0; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
+}
+.mode-tab.active { background: var(--accent); color: white; font-weight: 600; }
+
+/* Éléments visibles uniquement en mode Avancé (voir applyModeVisibility dans app.js) */
+.advanced-only.hidden { display: none !important; }
+
+.warning-hint { color: var(--warning); display: flex; align-items: center; gap: 5px; }
+.warning-hint::before { content: "⚠"; }
+
+.color-row { display: flex; align-items: center; gap: 6px; }
+.color-row input[type="color"] { flex: 1; }
+.reset-color-btn {
+  border: none; background: none; padding: 2px 6px; font-size: 13px; line-height: 1;
+  color: var(--text-tertiary); flex: 0 0 auto;
+}
+.reset-color-btn:hover { color: var(--accent); }
 
 .field { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
 .field:first-of-type { margin-top: 12px; }

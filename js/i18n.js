@@ -15,6 +15,9 @@ export const STRINGS = {
   },
 
   // --- Panneau d'options ---
+  "Mode": { fr: "Mode", en: "Mode" },
+  "Essentiel": { fr: "Essentiel", en: "Essentials" },
+  "Avancé": { fr: "Avancé", en: "Advanced" },
   "Mise en page": { fr: "Mise en page", en: "Layout" },
   "Diapositives par page": { fr: "Diapositives par page", en: "Slides per page" },
   "Disposition": { fr: "Disposition", en: "Arrangement" },
@@ -23,12 +26,24 @@ export const STRINGS = {
   "Prise de notes": { fr: "Prise de notes", en: "Note-taking" },
   "Taille de la diapositive": { fr: "Taille de la diapositive", en: "Slide size" },
   "Espacement des lignes": { fr: "Espacement des lignes", en: "Line spacing" },
+  "Style de ligne": { fr: "Style de ligne", en: "Line style" },
+  "Couleur des lignes": { fr: "Couleur des lignes", en: "Line color" },
+  "Opacité": { fr: "Opacité", en: "Opacity" },
+  "Réinitialiser la couleur des lignes": { fr: "Réinitialiser la couleur des lignes", en: "Reset line color" },
+  "Trop peu de place pour les lignes : la zone de notes restera vierge.": {
+    fr: "Trop peu de place pour les lignes : la zone de notes restera vierge.",
+    en: "Not enough room for lines: the notes area will remain blank."
+  },
   "Papier": { fr: "Papier", en: "Paper" },
   "Format": { fr: "Format", en: "Size" },
   "Orientation": { fr: "Orientation", en: "Orientation" },
   "Marges": { fr: "Marges", en: "Margins" },
   "Options": { fr: "Options", en: "Options" },
   "Numéroter les pages": { fr: "Numéroter les pages", en: "Number the pages" },
+  "La page de titre compte dans la numérotation": {
+    fr: "La page de titre compte dans la numérotation",
+    en: "Count the title page in the page numbering"
+  },
   "Numéroter les diapositives": { fr: "Numéroter les diapositives", en: "Number the slides" },
 
   // --- Zone de dépôt du PDF source ---
@@ -62,6 +77,14 @@ export const STRINGS = {
   // --- Page de titre ---
   "Page de titre": { fr: "Page de titre", en: "Title Page" },
   "Inclure la première diapositive": { fr: "Inclure la première diapositive", en: "Include the first slide" },
+  "La première diapositive sera utilisée comme page de titre.": {
+    fr: "La première diapositive sera utilisée comme page de titre.",
+    en: "The first slide will be used as the title page."
+  },
+  "Une page de titre sera ajoutée avant vos diapositives.": {
+    fr: "Une page de titre sera ajoutée avant vos diapositives.",
+    en: "A title page will be added before your slides."
+  },
   "Texte additionnel (optionnel)": { fr: "Texte additionnel (optionnel)", en: "Additional text (optional)" },
   "Position du texte": { fr: "Position du texte", en: "Text position" },
   "Sous la diapositive": { fr: "Sous la diapositive", en: "Below the slide" },
@@ -81,6 +104,27 @@ export const STRINGS = {
   "Italique": { fr: "Italique", en: "Italic" },
   "Taille du texte": { fr: "Taille du texte", en: "Text size" },
   "Couleur du texte": { fr: "Couleur du texte", en: "Text color" },
+  "Réinitialiser la couleur du texte": { fr: "Réinitialiser la couleur du texte", en: "Reset text color" },
+  "Ajouter une page blanche après la page de titre": {
+    fr: "Ajouter une page blanche après la page de titre",
+    en: "Add a blank page after the title page"
+  },
+  "Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.": {
+    fr: "Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.",
+    en: "Handy for double-sided printing: content will always start on a right-hand page."
+  },
+
+  // --- En-tête / Pied de page ---
+  "En-tête / Pied de page": { fr: "En-tête / Pied de page", en: "Header / Footer" },
+  "Afficher un texte en en-tête": { fr: "Afficher un texte en en-tête", en: "Show header text" },
+  "Texte de l'en-tête": { fr: "Texte de l'en-tête", en: "Header text" },
+  "Afficher un texte en pied de page": { fr: "Afficher un texte en pied de page", en: "Show footer text" },
+  "Texte du pied de page": { fr: "Texte du pied de page", en: "Footer text" },
+  "Utiliser le texte de la page de titre": { fr: "Utiliser le texte de la page de titre", en: "Use the title page text" },
+  "Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.": {
+    fr: "Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.",
+    en: "Text is truncated if it doesn't fit on one line. Never shown on the title page."
+  },
 
   // --- Traitement par lot ---
   "Traiter un lot...": { fr: "Traiter un lot...", en: "Process a Batch..." },
@@ -147,8 +191,14 @@ export const STRINGS = {
   "Lignes à droite (style Cornell)": { fr: "Lignes à droite (style Cornell)", en: "Lines on the right (Cornell style)" },
   "Lignes autour de la diapositive": { fr: "Lignes autour de la diapositive", en: "Lines around the slide" },
 
+  "Sans ligne (zone vierge)": { fr: "Sans ligne (zone vierge)", en: "No lines (blank area)" },
+  "Continue": { fr: "Continue", en: "Solid" },
+  "Tirets": { fr: "Tirets", en: "Dashes" },
+  "Pointillés": { fr: "Pointillés", en: "Dotted" },
+
   "Letter (US)": { fr: "Letter (US)", en: "Letter (US)" },
   "A4": { fr: "A4", en: "A4" },
+  "Legal (US)": { fr: "Legal (US)", en: "Legal (US)" },
   "Portrait": { fr: "Portrait", en: "Portrait" },
   "Paysage": { fr: "Paysage", en: "Landscape" },
 

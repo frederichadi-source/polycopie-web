@@ -18,7 +18,7 @@
     <div class="brand-text">
       <div class="brand-name-row">
         <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
-        <span class="brand-version" aria-hidden="true">(v1.1)</span>
+        <span class="brand-version" aria-hidden="true">(v1.3)</span>
       </div>
       <span class="brand-copyright" data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
     </div>
@@ -65,6 +65,14 @@
 
       <!-- Options panel (shown once a source PDF is loaded) -->
       <form id="optionsPanel" class="options-panel hidden">
+
+        <div class="mode-tabbar-row">
+          <span class="field-label" data-i18n="Mode">Mode</span>
+          <div class="mode-tabbar" role="tablist">
+            <button type="button" class="mode-tab" id="modeEssentialBtn" role="tab" data-i18n="Essentiel">Essentiel</button>
+            <button type="button" class="mode-tab" id="modeAdvancedBtn" role="tab" data-i18n="Avancé">Avancé</button>
+          </div>
+        </div>
 
         <fieldset class="opt-section" data-accent="presets">
           <legend><span class="section-icon">◆</span><span data-i18n="Préréglages">Préréglages</span></legend>
@@ -128,6 +136,34 @@
               <input type="range" id="lineSpacingPoints" min="14" max="36" step="1" />
               <output id="lineSpacingOut"></output>
             </label>
+
+            <div class="advanced-only">
+              <label class="field">
+                <span class="field-label" data-i18n="Style de ligne">Style de ligne</span>
+                <select id="noteLineStyle">
+                  <option value="none" data-i18n="Sans ligne (zone vierge)">Sans ligne (zone vierge)</option>
+                  <option value="solid" data-i18n="Continue">Continue</option>
+                  <option value="dashed" data-i18n="Tirets">Tirets</option>
+                  <option value="dotted" data-i18n="Pointillés">Pointillés</option>
+                </select>
+              </label>
+              <div class="field" id="noteLineColorField">
+                <span class="field-label" data-i18n="Couleur des lignes">Couleur des lignes</span>
+                <div class="color-row">
+                  <button type="button" class="btn icon-btn reset-color-btn hidden" id="resetNoteLineColorBtn" title="Réinitialiser la couleur des lignes" data-i18n-title="Réinitialiser la couleur des lignes">↺</button>
+                  <input type="color" id="noteLineColor" value="#bfbfbf" />
+                </div>
+              </div>
+              <label class="field range-field" id="noteLineOpacityField">
+                <span class="field-label" data-i18n="Opacité">Opacité</span>
+                <input type="range" id="noteLineOpacity" min="0" max="1" step="0.05" />
+                <output id="noteLineOpacityOut"></output>
+              </label>
+            </div>
+
+            <p class="hint warning-hint hidden" id="notesAreaWarning">
+              <span data-i18n="Trop peu de place pour les lignes : la zone de notes restera vierge.">Trop peu de place pour les lignes : la zone de notes restera vierge.</span>
+            </p>
           </div>
         </fieldset>
 
@@ -138,6 +174,7 @@
             <select id="pageSize">
               <option value="letter" data-i18n="Letter (US)">Letter (US)</option>
               <option value="a4" data-i18n="A4">A4</option>
+              <option value="legal" data-i18n="Legal (US)">Legal (US)</option>
             </select>
           </label>
           <label class="field">
@@ -162,62 +199,109 @@
           </label>
 
           <div id="titlePageFields" class="hidden">
-            <label class="field checkbox-field">
-              <input type="checkbox" id="titlePageIncludesFirstSlide" />
-              <span data-i18n="Inclure la première diapositive">Inclure la première diapositive</span>
-            </label>
+            <div class="advanced-only">
+              <label class="field checkbox-field">
+                <input type="checkbox" id="titlePageIncludesFirstSlide" />
+                <span data-i18n="Inclure la première diapositive">Inclure la première diapositive</span>
+              </label>
 
-            <label class="field">
-              <textarea id="titlePageText" rows="3" data-i18n-placeholder="Texte additionnel (optionnel)" placeholder="Texte additionnel (optionnel)"></textarea>
-            </label>
+              <label class="field">
+                <textarea id="titlePageText" rows="3" data-i18n-placeholder="Texte additionnel (optionnel)" placeholder="Texte additionnel (optionnel)"></textarea>
+              </label>
 
-            <label class="field" id="textPositionField">
-              <span class="field-label" data-i18n="Position du texte">Position du texte</span>
-              <select id="titlePageTextPosition">
-                <option value="belowSlide" data-i18n="Sous la diapositive">Sous la diapositive</option>
-                <option value="aboveSlide" data-i18n="Au-dessus de la diapositive">Au-dessus de la diapositive</option>
-              </select>
-            </label>
+              <label class="field" id="textPositionField">
+                <span class="field-label" data-i18n="Position du texte">Position du texte</span>
+                <select id="titlePageTextPosition">
+                  <option value="belowSlide" data-i18n="Sous la diapositive">Sous la diapositive</option>
+                  <option value="aboveSlide" data-i18n="Au-dessus de la diapositive">Au-dessus de la diapositive</option>
+                </select>
+              </label>
 
-            <label class="field">
-              <span class="field-label" data-i18n="Alignement">Alignement</span>
-              <select id="titlePageTextAlignment">
-                <option value="left" data-i18n="Gauche">Gauche</option>
-                <option value="center" data-i18n="Centré">Centré</option>
-                <option value="right" data-i18n="Droite">Droite</option>
-              </select>
-            </label>
+              <label class="field">
+                <span class="field-label" data-i18n="Alignement">Alignement</span>
+                <select id="titlePageTextAlignment">
+                  <option value="left" data-i18n="Gauche">Gauche</option>
+                  <option value="center" data-i18n="Centré">Centré</option>
+                  <option value="right" data-i18n="Droite">Droite</option>
+                </select>
+              </label>
 
-            <label class="field">
-              <span class="field-label" data-i18n="Police">Police</span>
-              <select id="titlePageFont">
-                <option value="system" data-i18n="Police système">Police système</option>
-                <option value="serif" data-i18n="Serif">Serif</option>
-                <option value="helvetica" data-i18n="Helvetica">Helvetica</option>
-                <option value="georgia" data-i18n="Georgia">Georgia</option>
-                <option value="courier" data-i18n="Courier">Courier</option>
-              </select>
-            </label>
+              <label class="field">
+                <span class="field-label" data-i18n="Police">Police</span>
+                <select id="titlePageFont">
+                  <option value="system" data-i18n="Police système">Police système</option>
+                  <option value="serif" data-i18n="Serif">Serif</option>
+                  <option value="helvetica" data-i18n="Helvetica">Helvetica</option>
+                  <option value="georgia" data-i18n="Georgia">Georgia</option>
+                  <option value="courier" data-i18n="Courier">Courier</option>
+                </select>
+              </label>
 
-            <div class="field">
-              <span class="field-label" data-i18n="Style">Style</span>
-              <div class="toggle-group">
-                <button type="button" class="toggle-btn" id="boldToggle" data-i18n-title="Gras" title="Gras"><b>B</b></button>
-                <button type="button" class="toggle-btn" id="italicToggle" data-i18n-title="Italique" title="Italique"><i>I</i></button>
+              <div class="field">
+                <span class="field-label" data-i18n="Style">Style</span>
+                <div class="toggle-group">
+                  <button type="button" class="toggle-btn" id="boldToggle" data-i18n-title="Gras" title="Gras"><b>B</b></button>
+                  <button type="button" class="toggle-btn" id="italicToggle" data-i18n-title="Italique" title="Italique"><i>I</i></button>
+                </div>
               </div>
+
+              <label class="field range-field">
+                <span class="field-label" data-i18n="Taille du texte">Taille du texte</span>
+                <input type="range" id="titlePageFontSize" min="9" max="36" step="1" />
+                <output id="titleFontSizeOut"></output>
+              </label>
+
+              <div class="field" id="titlePageColorField">
+                <span class="field-label" data-i18n="Couleur du texte">Couleur du texte</span>
+                <div class="color-row">
+                  <button type="button" class="btn icon-btn reset-color-btn hidden" id="resetTitlePageColorBtn" title="Réinitialiser la couleur du texte" data-i18n-title="Réinitialiser la couleur du texte">↺</button>
+                  <input type="color" id="titlePageFontColor" value="#000000" />
+                </div>
+              </div>
+
+              <label class="field checkbox-field">
+                <input type="checkbox" id="titlePageAddBlankPageAfter" />
+                <span data-i18n="Ajouter une page blanche après la page de titre">Ajouter une page blanche après la page de titre</span>
+              </label>
+              <p class="hint" data-i18n="Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.">Pratique pour une impression recto-verso : le contenu démarrera toujours sur une page de droite.</p>
             </div>
 
-            <label class="field range-field">
-              <span class="field-label" data-i18n="Taille du texte">Taille du texte</span>
-              <input type="range" id="titlePageFontSize" min="9" max="36" step="1" />
-              <output id="titleFontSizeOut"></output>
-            </label>
+            <p class="hint essential-only" id="titlePageEssentialHint"></p>
+          </div>
+        </fieldset>
 
-            <label class="field">
-              <span class="field-label" data-i18n="Couleur du texte">Couleur du texte</span>
-              <input type="color" id="titlePageFontColor" value="#000000" />
+        <fieldset class="opt-section advanced-only" data-accent="headerfooter" id="headerFooterSection">
+          <legend><span class="section-icon">▤</span><span data-i18n="En-tête / Pied de page">En-tête / Pied de page</span></legend>
+
+          <label class="field checkbox-field">
+            <input type="checkbox" id="headerEnabled" />
+            <span data-i18n="Afficher un texte en en-tête">Afficher un texte en en-tête</span>
+          </label>
+          <div id="headerFields" class="hidden">
+            <label class="field checkbox-field">
+              <input type="checkbox" id="headerUseTitleText" />
+              <span data-i18n="Utiliser le texte de la page de titre">Utiliser le texte de la page de titre</span>
+            </label>
+            <label class="field" id="headerTextField">
+              <input type="text" id="headerText" data-i18n-placeholder="Texte de l'en-tête" placeholder="Texte de l'en-tête" />
             </label>
           </div>
+
+          <label class="field checkbox-field">
+            <input type="checkbox" id="footerEnabled" />
+            <span data-i18n="Afficher un texte en pied de page">Afficher un texte en pied de page</span>
+          </label>
+          <div id="footerFields" class="hidden">
+            <label class="field checkbox-field">
+              <input type="checkbox" id="footerUseTitleText" />
+              <span data-i18n="Utiliser le texte de la page de titre">Utiliser le texte de la page de titre</span>
+            </label>
+            <label class="field" id="footerTextField">
+              <input type="text" id="footerText" data-i18n-placeholder="Texte du pied de page" placeholder="Texte du pied de page" />
+            </label>
+          </div>
+
+          <p class="hint hidden" id="headerFooterHint" data-i18n="Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.">Le texte est tronqué s'il ne tient pas sur une seule ligne. Jamais affiché sur la page de titre.</p>
         </fieldset>
 
         <fieldset class="opt-section" data-accent="options">
@@ -225,6 +309,10 @@
           <label class="field checkbox-field">
             <input type="checkbox" id="showPageNumbers" />
             <span data-i18n="Numéroter les pages">Numéroter les pages</span>
+          </label>
+          <label class="field checkbox-field advanced-only" id="pageNumberIncludesTitlePageField">
+            <input type="checkbox" id="pageNumberIncludesTitlePage" />
+            <span data-i18n="La page de titre compte dans la numérotation">La page de titre compte dans la numérotation</span>
           </label>
           <label class="field checkbox-field">
             <input type="checkbox" id="showSlideNumbers" />

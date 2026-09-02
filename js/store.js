@@ -7,7 +7,7 @@ export function defaultOptions() {
   return {
     slidesPerPage: 3,
     noteStyle: "linesBeside", // none | linesBelow | linesBeside | linesAround
-    pageSize: "letter", // letter | a4
+    pageSize: "letter", // letter | a4 | legal
     orientation: "portrait", // portrait | landscape
     gridArrangement: "automatic", // automatic | stacked | sideBySide
     showPageNumbers: true,
@@ -24,9 +24,34 @@ export function defaultOptions() {
     titlePageFontWeight: "regular", // regular | bold
     titlePageFontItalic: false,
     titlePageFontSize: 15,
-    titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 }
+    titlePageFontColor: { r: 0, g: 0, b: 0, a: 1 },
+    // Page entièrement blanche insérée après la page de titre (impression recto-verso) —
+    // n'incrémente pas la numérotation des pages, voir pdfEngine.js.
+    titlePageAddBlankPageAfter: false,
+
+    // Style/couleur des lignes de la zone de notes — indépendant de `noteStyle`, qui ne
+    // décrit que la disposition. "none" = zone réservée mais laissée vierge.
+    noteLineStyle: "solid", // none | solid | dashed | dotted
+    noteLineColor: { r: 0.75, g: 0.75, b: 0.75, a: 1 },
+
+    // En-tête / pied de page : jamais affichés sur la page de titre (voir pdfEngine.js).
+    headerEnabled: false,
+    headerText: "",
+    headerSource: "custom", // custom | titlePageText
+    footerEnabled: false,
+    footerText: "",
+    footerSource: "custom", // custom | titlePageText
+
+    // Si vrai (comportement historique), la page de titre est la page 1 et le contenu
+    // continue à partir de 2. Si faux, la page de titre n'affiche aucun numéro et le
+    // contenu redémarre à 1.
+    pageNumberIncludesTitlePage: true
   };
 }
+
+// Couleurs par défaut, réutilisées par les boutons de réinitialisation du panneau.
+export const DEFAULT_TITLE_TEXT_COLOR = { r: 0, g: 0, b: 0, a: 1 };
+export const DEFAULT_NOTE_LINE_COLOR = { r: 0.75, g: 0.75, b: 0.75, a: 1 };
 
 // --- Grilles par nombre de diapositives/page (columns, rows), voir SlidesPerPage.swift ---
 const STACKED_GRID = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [2, 2], 6: [2, 3], 9: [3, 3] };
@@ -59,9 +84,39 @@ export function resolvedGrid(options) {
   }
 }
 
+// Tailles en points (72 pts/pouce), en orientation portrait — voir HandoutPageSize côté Swift.
+const PAGE_SIZES = {
+  letter: { width: 612, height: 792 },
+  a4: { width: 595, height: 842 },
+  legal: { width: 612, height: 1008 }
+};
+
 export function resolvedPageSize(options) {
-  const base = options.pageSize === "a4" ? { width: 595, height: 842 } : { width: 612, height: 792 };
+  const base = PAGE_SIZES[options.pageSize] || PAGE_SIZES.letter;
   return options.orientation === "portrait" ? base : { width: base.height, height: base.width };
+}
+
+// --- Mode Essentiel / Avancé du panneau d'options ---
+// Volontairement hors de HandoutOptions (comme @AppStorage côté Swift) : c'est un réglage
+// d'affichage du panneau, pas un réglage de mise en page — il ne doit pas être enregistré
+// dans les préréglages ni voyager avec eux.
+
+const ADVANCED_MODE_KEY = "handoutShowAdvancedOptions";
+
+export function loadShowAdvancedOptions() {
+  try {
+    return localStorage.getItem(ADVANCED_MODE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function saveShowAdvancedOptions(value) {
+  try {
+    localStorage.setItem(ADVANCED_MODE_KEY, value ? "true" : "false");
+  } catch {
+    // Stockage indisponible : on continue sans persister.
+  }
 }
 
 // --- Derniers réglages utilisés (auto-sauvegardés à chaque changement) ---
