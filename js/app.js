@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.3";
+import { t, getLang, setLang } from "./i18n.js?v=1.3.1";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.3";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.3";
+} from "./store.js?v=1.3.1";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.3.1";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -42,6 +42,11 @@ const state = {
 
 let previewGeneration = 0;
 let debounceTimer = null;
+// Document pdf.js actuellement affiché dans l'aperçu. pdf.js gère un worker et des caches
+// internes (polices, images décodées, pages rendues) qui ne sont PAS libérés par le simple
+// ramasse-miettes JS quand la variable locale `pdf` d'un appel précédent sort de portée —
+// il faut appeler explicitement `.destroy()`. Voir destroyCurrentPreviewDoc() plus bas.
+let currentPreviewDoc = null;
 
 // ---------------------------------------------------------------------------------------
 // Raccourcis DOM
@@ -675,7 +680,15 @@ function hideError() {
 // Aperçu (rendu via pdf.js)
 // ---------------------------------------------------------------------------------------
 
+function destroyCurrentPreviewDoc() {
+  if (!currentPreviewDoc) return;
+  const doc = currentPreviewDoc;
+  currentPreviewDoc = null;
+  doc.destroy();
+}
+
 function clearPreview() {
+  destroyCurrentPreviewDoc();
   el.previewPages.innerHTML = "";
   el.previewScroll.classList.add("hidden");
   el.previewEmpty.classList.remove("hidden");
@@ -694,8 +707,29 @@ function updateExportEnabled() {
 
 async function renderPreview(bytes, myGeneration) {
   const loadingTask = pdfjsLib.getDocument({ data: bytes });
-  const pdf = await loadingTask.promise;
-  if (myGeneration !== previewGeneration) return;
+  let pdf;
+  try {
+    pdf = await loadingTask.promise;
+  } catch (err) {
+    // Le chargement a échoué (ou a été abandonné) : rien à afficher, mais la tâche a pu
+    // réserver des ressources (worker, tampons) qu'il faut quand même relâcher.
+    try { loadingTask.destroy(); } catch { /* déjà détruite/résolue, sans conséquence */ }
+    throw err;
+  }
+  if (myGeneration !== previewGeneration) {
+    // Un aperçu plus récent a déjà été demandé pendant ce chargement : celui-ci est
+    // obsolète avant même d'avoir servi, on le détruit tout de suite plutôt que d'attendre
+    // le ramasse-miettes (qui ne libère jamais les ressources internes de pdf.js).
+    pdf.destroy();
+    return;
+  }
+
+  // Remplace le document affiché : l'ancien (s'il y en a un) n'est plus référencé nulle
+  // part après ceci, donc on le détruit maintenant. C'est ce destroy() qui manquait et qui
+  // causait la fuite mémoire — chaque réglage modifié régénère l'aperçu, donc sans lui un
+  // nouveau document pdf.js (worker + caches) s'accumulait à chaque fois, jamais libéré.
+  destroyCurrentPreviewDoc();
+  currentPreviewDoc = pdf;
 
   el.previewPages.innerHTML = "";
   const outputScale = window.devicePixelRatio || 1;
