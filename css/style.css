@@ -136,6 +136,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .drop-zone .filename-row .icon-btn {
   position: relative;
   display: inline-block;
+  flex: 0 0 18px;
   width: 18px;
   height: 18px;
   padding: 0;
