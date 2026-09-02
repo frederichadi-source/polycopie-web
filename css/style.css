@@ -238,6 +238,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   width: 34px; height: 30px; cursor: pointer; font-size: 13px;
 }
 .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+/* Sur une police système sans-serif, l'italique d'un simple "I" majuscule est presque
+   invisible (le glyphe n'a quasiment qu'un trait vertical). Une police serif rend le
+   penché beaucoup plus lisible comme symbole "Italique". */
+#italicToggle i { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
 
 input[type="color"] {
   -webkit-appearance: none; appearance: none; border: 1px solid var(--border);
