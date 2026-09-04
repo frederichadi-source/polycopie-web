@@ -4,7 +4,7 @@
 // est le même des deux côtés, donc chaque CGRect/calcul se traduit directement.
 
 import { PDFDocument, StandardFonts, rgb, degrees } from "https://esm.sh/pdf-lib@1.17.1";
-import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.3.1";
+import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.4";
 
 export class HandoutError extends Error {
   constructor(key) {
@@ -363,9 +363,16 @@ async function embedTitleFont(pdfDoc, options) {
  * @param {Uint8Array} sourceBytes
  * @param {object} options
  * @param {(pagesDone: number) => void} [onProgress]
+ * @param {Set<number>|null} [includedPages] Numéros de page (1-based) à inclure dans la
+ *   grille de diapositives, dans l'ordre du document source. `null`/`undefined` (par défaut)
+ *   inclut toutes les pages — comportement historique, utilisé tel quel par le traitement
+ *   par lot (une sélection par page n'a de sens que pour un fichier précis). La diapositive
+ *   utilisée par `titlePageIncludesFirstSlide` n'est jamais affectée par cette sélection :
+ *   c'est un réglage distinct, indépendant de la grille. Port du paramètre `includedPages`
+ *   de `HandoutGenerator.generate` côté Swift.
  * @returns {Promise<Uint8Array>}
  */
-export async function generateHandout(sourceBytes, options, onProgress) {
+export async function generateHandout(sourceBytes, options, onProgress, includedPages = null) {
   let srcDoc;
   try {
     srcDoc = await PDFDocument.load(sourceBytes, { ignoreEncryption: true });
@@ -375,6 +382,15 @@ export async function generateHandout(sourceBytes, options, onProgress) {
 
   const pageCount = srcDoc.getPageCount();
   if (pageCount === 0) throw new HandoutError("Le PDF source ne contient aucune page.");
+
+  // Numéros de page 0-based à effectivement dessiner dans la grille, dans l'ordre du
+  // document source — voir le paramètre `includedPages` ci-dessus.
+  let pagesToRender = includedPages
+    ? Array.from({ length: pageCount }, (_, i) => i).filter((i) => includedPages.has(i + 1))
+    : Array.from({ length: pageCount }, (_, i) => i);
+  if (pagesToRender.length === 0 && !options.titlePageEnabled) {
+    throw new HandoutError("Aucune diapositive sélectionnée.");
+  }
 
   const outDoc = await PDFDocument.create();
   const indices = Array.from({ length: pageCount }, (_, i) => i);
@@ -406,7 +422,7 @@ export async function generateHandout(sourceBytes, options, onProgress) {
   const labelFont = await outDoc.embedFont(StandardFonts.Helvetica);
   const titleFont = await embedTitleFont(outDoc, options);
 
-  let sourcePageIndex = 0; // 0-based (embeddedPages[0] = diapositive 1)
+  let renderIndex = 0; // curseur 0-based dans pagesToRender
   let outputPageNumber = 0;
   let titlePageWasDrawn = false;
 
@@ -434,7 +450,13 @@ export async function generateHandout(sourceBytes, options, onProgress) {
     };
     drawTitlePage(page, titleSlide, aspectRatio, options, titleContentRect, titleFont, labelFont);
     if (titleShowsNumber) drawFooterBand(page, outputPageNumber, "", pageSize, margin, labelFont);
-    if (options.titlePageIncludesFirstSlide) sourcePageIndex = 1;
+    if (options.titlePageIncludesFirstSlide) {
+      // La diapositive 1 (index 0) est déjà affichée ci-dessus, en grand, sur la page de
+      // titre : on la retire de la grille pour ne pas la dessiner une seconde fois — qu'elle
+      // ait ou non été incluse dans la sélection de pages (voir le paramètre
+      // `includedPages`, indépendant de ce réglage).
+      pagesToRender = pagesToRender.filter((i) => i !== 0);
+    }
     if (onProgress) onProgress(outputPageNumber);
 
     // Page blanche optionnelle après la page de titre (impression recto-verso) :
@@ -446,12 +468,13 @@ export async function generateHandout(sourceBytes, options, onProgress) {
     }
   }
 
-  while (sourcePageIndex < pageCount) {
+  while (renderIndex < pagesToRender.length) {
     outputPageNumber++;
     const page = newPage();
 
     for (let slot = 0; slot < slotsPerPage; slot++) {
-      if (sourcePageIndex >= pageCount) break;
+      if (renderIndex >= pagesToRender.length) break;
+      const sourcePageIndex = pagesToRender[renderIndex]; // 0-based
       const embedded = embeddedPages[sourcePageIndex];
 
       const col = slot % columns;
@@ -466,9 +489,12 @@ export async function generateHandout(sourceBytes, options, onProgress) {
         drawNoteLines(page, notesRect, options.lineSpacingPoints, contentRect.y + contentRect.height,
           options.noteLineStyle, options.noteLineColor);
       }
+      // Le numéro affiché reste celui d'origine dans le document source (pas la position
+      // dans la sélection), pour rester cohérent avec la présentation de départ même si des
+      // diapositives ont été exclues.
       drawSlideOnPage(page, embedded, slide, options.showSlideNumbers, sourcePageIndex + 1, labelFont);
 
-      sourcePageIndex++;
+      renderIndex++;
     }
 
     if (headerText) drawHeaderBand(page, headerText, pageSize, margin, labelFont);

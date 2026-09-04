@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.3.1";
+import { t, getLang, setLang } from "./i18n.js?v=1.4";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.3.1";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.3.1";
+} from "./store.js?v=1.4";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.4";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -31,6 +31,15 @@ const state = {
   // tant qu'aucun PDF n'est chargé (comme côté Swift).
   sourceAspectRatio: 16 / 9,
   previewReady: false,
+  // Sélection de pages — spécifique au fichier chargé (voir loadSourceFile/clearSourceBtn) :
+  // jamais mémorisée dans les réglages ni les préréglages, contrairement au reste de
+  // `options`. `includedPages` (1-based) n'a de sens que si `useAllPages` est faux.
+  useAllPages: true,
+  includedPages: new Set(),
+  // Vignettes du PDF source pour la fenêtre de sélection, en cache pour ce fichier une fois
+  // chargées la première fois (voir loadPageThumbnails) — dataURL indexées par numéro de
+  // page 1-based.
+  pageThumbDataUrls: {},
   batchFiles: [], // {id, file, status, errorMessage, outputBytes}
   batchOptionsSnapshot: null,
   batchProcessing: false,
@@ -40,6 +49,13 @@ const state = {
   showAdvancedOptions: loadShowAdvancedOptions()
 };
 
+/** Sélection effective transmise à generateHandout : `null` (toutes les pages) quand
+ * `useAllPages` est vrai, pour garder le comportement historique même si `includedPages`
+ * contient une sélection résiduelle d'un PDF précédent. */
+function effectiveIncludedPages() {
+  return state.useAllPages ? null : state.includedPages;
+}
+
 let previewGeneration = 0;
 let debounceTimer = null;
 // Document pdf.js actuellement affiché dans l'aperçu. pdf.js gère un worker et des caches
@@ -47,6 +63,10 @@ let debounceTimer = null;
 // ramasse-miettes JS quand la variable locale `pdf` d'un appel précédent sort de portée —
 // il faut appeler explicitement `.destroy()`. Voir destroyCurrentPreviewDoc() plus bas.
 let currentPreviewDoc = null;
+// Même principe pour le document pdf.js utilisé par la fenêtre de sélection de pages
+// (vignettes du PDF source, distinct de l'aperçu du polycopié généré ci-dessus).
+let pageThumbDoc = null;
+let pageThumbGeneration = 0;
 
 // ---------------------------------------------------------------------------------------
 // Raccourcis DOM
@@ -65,6 +85,15 @@ const el = {
   clearSourceBtn: $("clearSourceBtn"),
   sourceFileName: $("sourceFileName"),
   sourceSlideCount: $("sourceSlideCount"),
+  pageSelectRow: $("pageSelectRow"),
+  useAllPagesBtn: $("useAllPagesBtn"),
+  selectPagesBtn: $("selectPagesBtn"),
+  editPageSelectionBtn: $("editPageSelectionBtn"),
+  pageSelectionDialog: $("pageSelectionDialog"),
+  pageThumbGrid: $("pageThumbGrid"),
+  selectAllPagesBtn: $("selectAllPagesBtn"),
+  deselectAllPagesBtn: $("deselectAllPagesBtn"),
+  pageSelectionSummary: $("pageSelectionSummary"),
 
   optionsPanel: $("optionsPanel"),
   modeEssentialBtn: $("modeEssentialBtn"),
@@ -583,11 +612,19 @@ async function loadSourceFile(file) {
     state.sourcePageCount = pageCount;
     state.sourceAspectRatio = sourceAspectRatioOfDocument(doc);
     state.previewReady = false;
+    // Une sélection de pages est spécifique au fichier chargé : un nouveau PDF repart
+    // systématiquement sur "toutes les pages" plutôt que de réutiliser une sélection qui
+    // n'aurait plus de sens sur un autre document.
+    state.useAllPages = true;
+    state.includedPages = new Set();
+    state.pageThumbDataUrls = {};
 
     el.dropEmpty.classList.add("hidden");
     el.dropFilled.classList.remove("hidden");
     el.sourceFileName.textContent = file.name;
     el.sourceSlideCount.textContent = slideCountLabel(pageCount);
+    el.pageSelectRow.classList.toggle("hidden", pageCount <= 1);
+    setUseAllPages(true, { silent: true });
 
     el.optionsPanel.classList.remove("hidden");
     el.exportBtn.classList.remove("hidden");
@@ -641,15 +678,197 @@ el.clearSourceBtn.addEventListener("click", () => {
   state.sourcePageCount = 0;
   state.sourceAspectRatio = 16 / 9;
   state.previewReady = false;
+  state.useAllPages = true;
+  state.includedPages = new Set();
+  state.pageThumbDataUrls = {};
 
   el.dropEmpty.classList.remove("hidden");
   el.dropFilled.classList.add("hidden");
+  el.pageSelectRow.classList.add("hidden");
+  setUseAllPages(true, { silent: true });
   el.optionsPanel.classList.add("hidden");
   el.exportBtn.classList.add("hidden");
   el.toolbar.classList.add("hidden");
   clearPreview();
   hideError();
   updateConditionalVisibility();
+});
+
+// ---------------------------------------------------------------------------------------
+// Sélection de pages
+// ---------------------------------------------------------------------------------------
+
+function updatePageSelectionSummaryBtn() {
+  const text = t("%d sur %d sélectionnées")
+    .replace("%d", state.includedPages.size)
+    .replace("%d", state.sourcePageCount);
+  el.editPageSelectionBtn.textContent = text;
+}
+
+/** Bascule entre "toutes les pages" et "sélection manuelle". Ouvre automatiquement la
+ * fenêtre de sélection la première fois qu'on passe en mode manuel (toutes les pages
+ * cochées par défaut) — `silent` évite de redéclencher une régénération d'aperçu quand
+ * l'appel vient d'une remise à zéro (nouveau PDF / retrait du PDF), qui va de toute façon
+ * régénérer ou effacer l'aperçu juste après. */
+function setUseAllPages(value, { silent = false } = {}) {
+  state.useAllPages = value;
+  el.useAllPagesBtn.classList.toggle("active", value);
+  el.selectPagesBtn.classList.toggle("active", !value);
+  el.editPageSelectionBtn.classList.toggle("hidden", value);
+
+  if (!value) {
+    if (state.includedPages.size === 0 && state.sourcePageCount > 0) {
+      state.includedPages = new Set(Array.from({ length: state.sourcePageCount }, (_, i) => i + 1));
+    }
+    updatePageSelectionSummaryBtn();
+  }
+
+  if (!silent) {
+    scheduleRegeneratePreview();
+    if (!value) openPageSelectionDialog();
+  }
+}
+
+el.useAllPagesBtn.addEventListener("click", () => setUseAllPages(true));
+el.selectPagesBtn.addEventListener("click", () => setUseAllPages(false));
+el.editPageSelectionBtn.addEventListener("click", () => openPageSelectionDialog());
+
+function updatePageSelectionSummary() {
+  el.pageSelectionSummary.textContent = t("%d sur %d diapositives sélectionnées")
+    .replace("%d", state.includedPages.size)
+    .replace("%d", state.sourcePageCount);
+}
+
+/** Bascule l'inclusion d'une page et met à jour la cellule concernée (classe CSS + coche)
+ * sans reconstruire toute la grille, plus le résumé et l'aperçu. */
+function togglePageIncluded(pageIndex, cellEl) {
+  if (state.includedPages.has(pageIndex)) {
+    state.includedPages.delete(pageIndex);
+  } else {
+    state.includedPages.add(pageIndex);
+  }
+  const included = state.includedPages.has(pageIndex);
+  cellEl.classList.toggle("included", included);
+  cellEl.classList.toggle("excluded", !included);
+  cellEl.querySelector(".page-thumb-check").textContent = included ? "✓" : "";
+  updatePageSelectionSummary();
+  updatePageSelectionSummaryBtn();
+  scheduleRegeneratePreview();
+}
+
+function buildThumbCell(pageIndex) {
+  const included = state.includedPages.has(pageIndex);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `page-thumb ${included ? "included" : "excluded"}`;
+
+  const frame = document.createElement("div");
+  frame.className = "page-thumb-frame";
+
+  const check = document.createElement("span");
+  check.className = "page-thumb-check";
+  check.textContent = included ? "✓" : "";
+  frame.appendChild(check);
+
+  const number = document.createElement("span");
+  number.className = "page-thumb-number";
+  number.textContent = String(pageIndex);
+
+  button.append(frame, number);
+  button.addEventListener("click", () => togglePageIncluded(pageIndex, button));
+  return { button, frame };
+}
+
+/** Charge les vignettes du PDF source une par une (pdf.js), pour que la grille se remplisse
+ * progressivement sur un document de plusieurs dizaines de pages sans geler l'ouverture de
+ * la fenêtre — même principe que renderPreview. Les vignettes déjà rendues pour ce fichier
+ * sont réutilisées (voir state.pageThumbDataUrls), donc rouvrir la fenêtre est instantané. */
+async function loadPageThumbnails() {
+  if (!state.sourceBytes) return;
+  const myGeneration = ++pageThumbGeneration;
+
+  el.pageThumbGrid.innerHTML = "";
+  const cells = {};
+  for (let pageIndex = 1; pageIndex <= state.sourcePageCount; pageIndex++) {
+    const { button, frame } = buildThumbCell(pageIndex);
+    el.pageThumbGrid.appendChild(button);
+    cells[pageIndex] = frame;
+    const cached = state.pageThumbDataUrls[pageIndex];
+    if (cached) {
+      const img = document.createElement("img");
+      img.src = cached;
+      img.alt = "";
+      frame.appendChild(img);
+    }
+  }
+
+  const missing = Array.from({ length: state.sourcePageCount }, (_, i) => i + 1)
+    .filter((pageIndex) => !state.pageThumbDataUrls[pageIndex]);
+  if (missing.length === 0) return;
+
+  const loadingTask = pdfjsLib.getDocument({ data: state.sourceBytes });
+  let pdf;
+  try {
+    pdf = await loadingTask.promise;
+  } catch {
+    try { loadingTask.destroy(); } catch { /* déjà détruite/résolue, sans conséquence */ }
+    return;
+  }
+  if (myGeneration !== pageThumbGeneration) { pdf.destroy(); return; }
+  if (pageThumbDoc) pageThumbDoc.destroy();
+  pageThumbDoc = pdf;
+
+  const scale = 0.35;
+  for (const pageIndex of missing) {
+    if (myGeneration !== pageThumbGeneration) return;
+    const page = await pdf.getPage(pageIndex);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d");
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    if (myGeneration !== pageThumbGeneration) return;
+
+    const dataUrl = canvas.toDataURL("image/png");
+    state.pageThumbDataUrls[pageIndex] = dataUrl;
+    const frame = cells[pageIndex];
+    if (frame && !frame.querySelector("img")) {
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.alt = "";
+      frame.appendChild(img);
+    }
+  }
+}
+
+function openPageSelectionDialog() {
+  updatePageSelectionSummary();
+  el.pageSelectionDialog.showModal();
+  loadPageThumbnails();
+}
+
+el.selectAllPagesBtn.addEventListener("click", () => {
+  state.includedPages = new Set(Array.from({ length: state.sourcePageCount }, (_, i) => i + 1));
+  el.pageThumbGrid.querySelectorAll(".page-thumb").forEach((cellEl, i) => {
+    cellEl.classList.add("included");
+    cellEl.classList.remove("excluded");
+    cellEl.querySelector(".page-thumb-check").textContent = "✓";
+  });
+  updatePageSelectionSummary();
+  updatePageSelectionSummaryBtn();
+  scheduleRegeneratePreview();
+});
+el.deselectAllPagesBtn.addEventListener("click", () => {
+  state.includedPages = new Set();
+  el.pageThumbGrid.querySelectorAll(".page-thumb").forEach((cellEl) => {
+    cellEl.classList.remove("included");
+    cellEl.classList.add("excluded");
+    cellEl.querySelector(".page-thumb-check").textContent = "";
+  });
+  updatePageSelectionSummary();
+  updatePageSelectionSummaryBtn();
+  scheduleRegeneratePreview();
 });
 
 // Vit dans la section Préréglages plutôt qu'à côté du PDF chargé : son action porte
@@ -770,7 +989,7 @@ async function regeneratePreviewNow() {
   showOverlay(true);
   hideError();
   try {
-    const bytes = await generateHandout(state.sourceBytes, options);
+    const bytes = await generateHandout(state.sourceBytes, options, undefined, effectiveIncludedPages());
     if (myGeneration !== previewGeneration) return;
     await renderPreview(bytes, myGeneration);
   } catch (err) {
@@ -805,7 +1024,7 @@ async function doExport() {
   if (!state.sourceBytes) return;
   hideError();
   try {
-    const bytes = await generateHandout(state.sourceBytes, options);
+    const bytes = await generateHandout(state.sourceBytes, options, undefined, effectiveIncludedPages());
     downloadBlob(new Blob([bytes], { type: "application/pdf" }), suggestedFilename(state.sourceFile.name));
   } catch (err) {
     showError(err instanceof HandoutError ? t(err.key) : String(err?.message || err));

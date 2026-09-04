@@ -55,6 +55,18 @@ export const STRINGS = {
   "Choisir un fichier PDF...": { fr: "Choisir un fichier PDF...", en: "Choose a PDF File..." },
   "diapositive": { fr: "diapositive", en: "slide" },
   "diapositives": { fr: "diapositives", en: "slides" },
+  "Toutes les pages": { fr: "Toutes les pages", en: "All pages" },
+  "Sélectionner les pages": { fr: "Sélectionner les pages", en: "Select pages" },
+  "%d sur %d sélectionnées": { fr: "%d sur %d sélectionnées", en: "%d of %d selected" },
+
+  // --- Fenêtre de sélection des pages ---
+  "Tout cocher": { fr: "Tout cocher", en: "Select All" },
+  "Tout décocher": { fr: "Tout décocher", en: "Deselect All" },
+  "%d sur %d diapositives sélectionnées": {
+    fr: "%d sur %d diapositives sélectionnées",
+    en: "%d of %d slides selected"
+  },
+  "Aucune diapositive sélectionnée.": { fr: "Aucune diapositive sélectionnée.", en: "No slides selected." },
 
   // --- Vue principale / export ---
   "Aucun PDF sélectionné": { fr: "Aucun PDF sélectionné", en: "No PDF Selected" },
