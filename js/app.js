@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.4";
+import { t, getLang, setLang } from "./i18n.js?v=1.4.1";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.4";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.4";
+} from "./store.js?v=1.4.1";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.4.1";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -806,7 +806,10 @@ async function loadPageThumbnails() {
     .filter((pageIndex) => !state.pageThumbDataUrls[pageIndex]);
   if (missing.length === 0) return;
 
-  const loadingTask = pdfjsLib.getDocument({ data: state.sourceBytes });
+  // On passe une copie à pdf.js : il arrive que pdf.js transfère (au lieu de copier) le
+  // buffer sous-jacent vers son worker, ce qui viderait state.sourceBytes — or ce même
+  // tableau est réutilisé ensuite par pdf-lib (generateHandout) pour produire le polycopié.
+  const loadingTask = pdfjsLib.getDocument({ data: state.sourceBytes.slice() });
   let pdf;
   try {
     pdf = await loadingTask.promise;
