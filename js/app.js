@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.4.1";
+import { t, getLang, setLang } from "./i18n.js?v=1.5";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.4.1";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.4.1";
+} from "./store.js?v=1.5";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -76,6 +76,8 @@ const $ = (id) => document.getElementById(id);
 
 const el = {
   langSelect: $("langSelect"),
+  themeToggleBtn: $("themeToggleBtn"),
+  themePopover: $("themePopover"),
   dropZone: $("dropZone"),
   dropEmpty: document.querySelector(".drop-zone-empty"),
   dropFilled: document.querySelector(".drop-zone-filled"),
@@ -221,6 +223,86 @@ el.langSelect.addEventListener("change", () => {
   setLang(el.langSelect.value);
   applyI18n();
 });
+
+// ---------------------------------------------------------------------------------------
+// Thème d'apparence (Classique / Académique / Imprimerie / Funky)
+// ---------------------------------------------------------------------------------------
+// Miroir du système de thèmes Xcode (voir AppTheme.swift) : "classique" ne pose aucun
+// attribut (comportement/couleurs par défaut, mode sombre auto conservé), les 3 autres
+// posent data-theme sur <html> et les couleurs sont définies dans style.css. Le choix
+// est déjà appliqué de façon synchrone par le petit script inline dans index.html
+// (avant le premier rendu) — ce bloc ne fait que garder le popover et le libellé
+// "sélectionné" synchronisés avec ce choix.
+const THEME_STORAGE_KEY = "polycopie-theme";
+
+function getTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || "classique";
+  } catch (e) {
+    return "classique";
+  }
+}
+
+function setTheme(value) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, value);
+  } catch (e) {}
+  if (value === "classique") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", value);
+  }
+  updateThemeSwatchSelection();
+}
+
+function updateThemeSwatchSelection() {
+  const current = getTheme();
+  document.querySelectorAll(".theme-swatch").forEach((btn) => {
+    btn.classList.toggle("is-selected", btn.dataset.themeValue === current);
+  });
+}
+
+function openThemePopover() {
+  el.themePopover.hidden = false;
+  el.themeToggleBtn.setAttribute("aria-expanded", "true");
+}
+
+function closeThemePopover() {
+  el.themePopover.hidden = true;
+  el.themeToggleBtn.setAttribute("aria-expanded", "false");
+}
+
+if (el.themeToggleBtn && el.themePopover) {
+  updateThemeSwatchSelection();
+
+  el.themeToggleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (el.themePopover.hidden) {
+      openThemePopover();
+    } else {
+      closeThemePopover();
+    }
+  });
+
+  document.querySelectorAll(".theme-swatch").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setTheme(btn.dataset.themeValue);
+      closeThemePopover();
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!el.themePopover.hidden && !el.themePopover.contains(event.target) && event.target !== el.themeToggleBtn) {
+      closeThemePopover();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !el.themePopover.hidden) {
+      closeThemePopover();
+    }
+  });
+}
 
 // ---------------------------------------------------------------------------------------
 // Réglages <-> formulaire

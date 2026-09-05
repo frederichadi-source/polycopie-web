@@ -8,7 +8,19 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png" />
-<link rel="stylesheet" href="css/style.css?v=1.4.1" />
+<link rel="stylesheet" href="css/style.css?v=1.5" />
+<script>
+  // Appliqué en synchrone, avant le premier rendu, pour éviter un flash du thème par
+  // défaut (Classique) le temps que app.js (type="module", asynchrone) se charge.
+  (function () {
+    try {
+      var saved = localStorage.getItem("polycopie-theme");
+      if (saved && saved !== "classique") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 
@@ -18,7 +30,7 @@
     <div class="brand-text">
       <div class="brand-name-row">
         <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
-        <span class="brand-version" aria-hidden="true">(v1.4.1)</span>
+        <span class="brand-version" aria-hidden="true">(v1.5)</span>
       </div>
       <span class="brand-copyright" data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
     </div>
@@ -27,6 +39,46 @@
     <span class="privacy-note" data-i18n="Vos fichiers ne quittent jamais votre navigateur : tout le traitement se fait localement.">
       Vos fichiers ne quittent jamais votre navigateur : tout le traitement se fait localement.
     </span>
+    <div class="theme-switch">
+      <button
+        id="themeToggleBtn"
+        class="theme-toggle-btn"
+        type="button"
+        aria-haspopup="true"
+        aria-expanded="false"
+        data-i18n-title="Apparence"
+        title="Apparence"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-.9.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7Z"/>
+          <circle cx="7.5" cy="11.5" r="1.1" fill="currentColor" stroke="none"/>
+          <circle cx="9.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/>
+          <circle cx="14.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/>
+          <circle cx="16.5" cy="11.5" r="1.1" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+      <div id="themePopover" class="theme-popover" hidden>
+        <div class="theme-popover-title" data-i18n="Apparence">Apparence</div>
+        <div class="theme-swatch-grid">
+          <button class="theme-swatch" data-theme-value="classique" type="button">
+            <span class="theme-swatch-preview theme-swatch-classique"></span>
+            <span data-i18n="Classique">Classique</span>
+          </button>
+          <button class="theme-swatch" data-theme-value="academique" type="button">
+            <span class="theme-swatch-preview theme-swatch-academique"></span>
+            <span data-i18n="Académique">Académique</span>
+          </button>
+          <button class="theme-swatch" data-theme-value="imprimerie" type="button">
+            <span class="theme-swatch-preview theme-swatch-imprimerie"></span>
+            <span data-i18n="Imprimerie">Imprimerie</span>
+          </button>
+          <button class="theme-swatch" data-theme-value="funky" type="button">
+            <span class="theme-swatch-preview theme-swatch-funky"></span>
+            <span data-i18n="Funky">Funky</span>
+          </button>
+        </div>
+      </div>
+    </div>
     <label class="lang-switch">
       <select id="langSelect" aria-label="Language">
         <option value="fr">Français</option>
@@ -449,6 +501,6 @@
   </div>
 </dialog>
 
-<script type="module" src="js/app.js?v=1.4.1"></script>
+<script type="module" src="js/app.js?v=1.5"></script>
 </body>
 </html>

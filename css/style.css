@@ -26,6 +26,7 @@
   --radius: 10px;
   --radius-lg: 14px;
   --shadow: 0 1px 2px rgba(20, 24, 33, 0.04), 0 8px 24px rgba(20, 24, 33, 0.06);
+  --font-heading: inherit;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +39,56 @@
     --text-tertiary: #6d7280;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
+}
+
+/* ---------- Thèmes d'apparence (Réglages > Apparence côté Xcode ; ici via l'icône
+   palette de l'en-tête). "Classique" = aucun attribut = les couleurs par défaut
+   ci-dessus, avec le mode sombre automatique. Les 3 autres fixent des couleurs
+   claires et désactivent volontairement le mode sombre auto, comme côté Swift
+   (voir AppTheme.swift : background != nil pour ces 3 thèmes). ---------- */
+:root[data-theme="academique"] {
+  --accent: #c4703d;
+  --presets: #d99933;
+  --layout: #4c6b3c;
+  --paper: #99733f;
+  --title: #b74d4d;
+  --headerfooter: #59808c;
+  --options: #59804c;
+  --bg: #efeae1;
+  --surface: #faf6ef;
+  --border: #e3dbc9;
+  --text: #2e2a24;
+  --text-secondary: #6b6152;
+  --text-tertiary: #8a8172;
+}
+
+:root[data-theme="imprimerie"] {
+  --accent: #7a2e3a;
+  --presets: #7a2e3a;
+  --layout: #4d4d52;
+  --paper: #665c4c;
+  --title: #7a2e3a;
+  --headerfooter: #4d4d52;
+  --options: #4d4d52;
+  --bg: #efedE7;
+  --surface: #fdfbf7;
+  --border: #dad4c7;
+  --text: #3a2e30;
+  --text-secondary: #6b6259;
+  --text-tertiary: #8c8378;
+  --font-heading: Georgia, "Times New Roman", serif;
+}
+
+:root[data-theme="funky"] {
+  --accent: #6e5adb;
+  --presets: #c97d4a;
+  --layout: #3f8f6b;
+  --paper: #6e5adb;
+  --title: #d95e97;
+  --headerfooter: #3f8f6b;
+  --options: #c97d4a;
+  --radius: 14px;
+  --radius-lg: 18px;
 }
 
 * { box-sizing: border-box; }
@@ -67,6 +118,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
 .brand-text { display: flex; flex-direction: column; gap: 1px; }
 .brand-name-row { display: flex; align-items: baseline; gap: 5px; }
+.brand-name { font-family: var(--font-heading); }
 .brand-version { font-weight: 400; font-size: 10px; color: var(--text-tertiary); }
 .brand-copyright { font-weight: 400; font-size: 11px; color: var(--text-secondary); }
 .brand-mark {
@@ -84,6 +136,56 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 5px 8px;
   font-size: 13px;
 }
+
+/* ---------- Sélecteur de thème (icône palette + popover) ---------- */
+.theme-switch { position: relative; }
+.theme-toggle-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.theme-toggle-btn:hover { color: var(--accent); border-color: var(--accent); }
+.theme-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  width: 220px;
+}
+.theme-popover-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-tertiary); margin-bottom: 8px;
+}
+.theme-swatch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.theme-swatch {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 6px;
+  background: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--text);
+}
+.theme-swatch:hover { border-color: var(--accent); }
+.theme-swatch.is-selected { border-color: var(--accent); border-width: 2px; }
+.theme-swatch-preview {
+  display: block; width: 100%; height: 30px; border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.theme-swatch-classique { background: linear-gradient(135deg, #f6f7f9 50%, #4f66d9 50%); }
+.theme-swatch-academique { background: linear-gradient(135deg, #faf6ef 50%, #c4703d 50%); }
+.theme-swatch-imprimerie { background: linear-gradient(135deg, #fdfbf7 50%, #7a2e3a 50%); }
+.theme-swatch-funky { background: linear-gradient(135deg, #ffffff 50%, #6e5adb 50%); }
 
 /* ---------- Layout ---------- */
 .layout {
@@ -201,6 +303,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   display: flex; align-items: center; gap: 8px;
   font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;
   padding: 0 4px; color: var(--text-secondary);
+  font-family: var(--font-heading);
 }
 .opt-section[data-accent="presets"] .section-icon { color: var(--presets); }
 .opt-section[data-accent="layout"] .section-icon { color: var(--layout); }
