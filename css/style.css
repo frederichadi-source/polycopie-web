@@ -313,6 +313,34 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .opt-section[data-accent="options"] .section-icon { color: var(--options); }
 .section-icon { font-size: 14px; }
 
+/* Médaillon rond derrière l'icône de section (Académique + Funky uniquement — absent de
+   la maquette Imprimerie, qui reste volontairement plus sobre). */
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+}
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="presets"] .section-icon { background: color-mix(in srgb, var(--presets) 18%, transparent); }
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="layout"] .section-icon { background: color-mix(in srgb, var(--layout) 18%, transparent); }
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="paper"] .section-icon { background: color-mix(in srgb, var(--paper) 18%, transparent); }
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="title"] .section-icon { background: color-mix(in srgb, var(--title) 18%, transparent); }
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="headerfooter"] .section-icon { background: color-mix(in srgb, var(--headerfooter) 18%, transparent); }
+:is(:root[data-theme="academique"], :root[data-theme="funky"]) .opt-section[data-accent="options"] .section-icon { background: color-mix(in srgb, var(--options) 18%, transparent); }
+
+/* Fond pastel par section (Funky uniquement — c'est la maquette qui différenciait
+   chaque carte de réglages par une teinte douce, contrairement à Académique qui n'a
+   qu'un fond crème uniforme). */
+:root[data-theme="funky"] .opt-section[data-accent="presets"] { background: color-mix(in srgb, var(--presets) 8%, var(--surface)); }
+:root[data-theme="funky"] .opt-section[data-accent="layout"] { background: color-mix(in srgb, var(--layout) 8%, var(--surface)); }
+:root[data-theme="funky"] .opt-section[data-accent="paper"] { background: color-mix(in srgb, var(--paper) 8%, var(--surface)); }
+:root[data-theme="funky"] .opt-section[data-accent="title"] { background: color-mix(in srgb, var(--title) 8%, var(--surface)); }
+:root[data-theme="funky"] .opt-section[data-accent="headerfooter"] { background: color-mix(in srgb, var(--headerfooter) 8%, var(--surface)); }
+:root[data-theme="funky"] .opt-section[data-accent="options"] { background: color-mix(in srgb, var(--options) 8%, var(--surface)); }
+
 /* ---------- Mode Essentiel / Avancé ---------- */
 .mode-tabbar-row { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
 .mode-tabbar {
