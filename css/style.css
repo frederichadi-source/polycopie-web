@@ -78,6 +78,23 @@
   --text-tertiary: #8c8378;
   --font-heading: Georgia, "Times New Roman", serif;
 }
+/* Esthétique "papeterie" : bordure pleine (pas pointillée) sur la zone de dépôt, et
+   sections en simples lignes soulignées plutôt qu'en boîtes avec bordure — voir la
+   maquette "Encre & papier", qui n'a ni boîte ni icône sur les en-têtes de section. */
+:root[data-theme="imprimerie"] .drop-zone { border-style: solid; }
+:root[data-theme="imprimerie"] .opt-section {
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 0 14px;
+}
+:root[data-theme="imprimerie"] .opt-section legend {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  width: 100%;
+}
+:root[data-theme="imprimerie"] .section-icon { display: none; }
 
 :root[data-theme="funky"] {
   --accent: #6e5adb;

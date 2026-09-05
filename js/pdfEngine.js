@@ -4,7 +4,7 @@
 // est le même des deux côtés, donc chaque CGRect/calcul se traduit directement.
 
 import { PDFDocument, StandardFonts, rgb, degrees } from "https://esm.sh/pdf-lib@1.17.1";
-import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.5.3";
+import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.5.4";
 
 export class HandoutError extends Error {
   constructor(key) {
