@@ -357,6 +357,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 :root[data-theme="funky"] .opt-section[data-accent="title"] { background: color-mix(in srgb, var(--title) 8%, var(--surface)); }
 :root[data-theme="funky"] .opt-section[data-accent="headerfooter"] { background: color-mix(in srgb, var(--headerfooter) 8%, var(--surface)); }
 :root[data-theme="funky"] .opt-section[data-accent="options"] { background: color-mix(in srgb, var(--options) 8%, var(--surface)); }
+/* La maquette n'a aucune bordure grise : c'est la couleur pastel elle-même qui délimite
+   la zone, pas un cadre séparé par-dessus. */
+:root[data-theme="funky"] .opt-section { border: none; }
 
 /* ---------- Mode Essentiel / Avancé ---------- */
 .mode-tabbar-row { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
