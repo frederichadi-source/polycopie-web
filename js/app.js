@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.5.2";
+import { t, getLang, setLang } from "./i18n.js?v=1.5.3";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.5.2";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5.2";
+} from "./store.js?v=1.5.3";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5.3";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -678,6 +678,69 @@ function slideCountLabel(count) {
   return `${count} ${unit}`;
 }
 
+// Certains clients mail (ex. glisser une pièce jointe depuis Apple Mail) exposent le
+// nom de fichier tel quel depuis l'en-tête MIME, encodé en "encoded-word" RFC 2047
+// (ex. "=?utf-8?B?....?=") — parfois replié sur plusieurs lignes avec des sauts
+// quoted-printable ("=0D=0A" ou sa forme pourcent-encodée "=%0d%0a"). Le navigateur ne
+// décode jamais ça lui-même : sans ce décodeur, le nom brut s'affiche tel quel.
+function decodeMimeEncodedFilename(name) {
+  if (!name || name.indexOf("=?") === -1) return name;
+  try {
+    const openingPattern = /=\?([\w-]+)\?([BbQq])\?/;
+    const firstOpen = name.match(openingPattern);
+    if (!firstOpen) return name;
+    const [, charset, encoding] = firstOpen;
+
+    const prefix = name.slice(0, firstOpen.index);
+    let rest = name.slice(firstOpen.index);
+
+    // Isole un éventuel suffixe non encodé après le DERNIER "?=" (ex. l'extension ".pdf").
+    const lastClose = rest.lastIndexOf("?=");
+    let suffix = "";
+    if (lastClose !== -1) {
+      suffix = rest.slice(lastClose + 2);
+      rest = rest.slice(0, lastClose);
+    }
+
+    // Le pli (line folding) peut être malformé et rouvrir un nouveau marqueur
+    // "=?charset?B?" en plein milieu d'un mot encodé, sans balise de fermeture propre
+    // avant (voir capture d'écran) — plutôt que de chercher des paires "=?...?=" bien
+    // formées, on retire tous les marqueurs d'ouverture/fermeture et artefacts de pli
+    // rencontrés, et on décode le reste comme une seule charge utile continue.
+    const payload = rest
+      .replace(/=\?[\w-]+\?[BbQq]\?/g, "")
+      .replace(/\?=/g, "")
+      .replace(/=(?:0d|0D)=(?:0a|0A)/g, "")
+      .replace(/=%(?:0d|0D)%(?:0a|0A)/g, "")
+      .replace(/\s+/g, "");
+
+    return prefix + decodeMimeWord(charset, encoding, payload) + suffix;
+  } catch (e) {
+    // En cas de format inattendu, on préfère afficher le nom brut plutôt que planter.
+    return name;
+  }
+}
+
+function decodeMimeWord(charset, encoding, text) {
+  if (encoding.toLowerCase() === "b") {
+    const binary = atob(text);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder(charset || "utf-8").decode(bytes);
+  }
+  // Encodage "Q" (quoted-printable adapté aux en-têtes) : "_" = espace, "=XX" = octet hex.
+  const withSpaces = text.replace(/_/g, " ");
+  const byteValues = [];
+  for (let i = 0; i < withSpaces.length; i++) {
+    if (withSpaces[i] === "=" && i + 2 < withSpaces.length) {
+      byteValues.push(parseInt(withSpaces.slice(i + 1, i + 3), 16));
+      i += 2;
+    } else {
+      byteValues.push(withSpaces.charCodeAt(i));
+    }
+  }
+  return new TextDecoder(charset || "utf-8").decode(Uint8Array.from(byteValues));
+}
+
 async function loadSourceFile(file) {
   if (!file || (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf"))) {
     return;
@@ -703,7 +766,7 @@ async function loadSourceFile(file) {
 
     el.dropEmpty.classList.add("hidden");
     el.dropFilled.classList.remove("hidden");
-    el.sourceFileName.textContent = file.name;
+    el.sourceFileName.textContent = decodeMimeEncodedFilename(file.name);
     el.sourceSlideCount.textContent = slideCountLabel(pageCount);
     el.pageSelectRow.classList.toggle("hidden", pageCount <= 1);
     setUseAllPages(true, { silent: true });
@@ -1101,7 +1164,7 @@ function downloadBlob(blob, filename) {
 }
 
 function suggestedFilename(sourceName) {
-  const base = sourceName.replace(/\.pdf$/i, "");
+  const base = decodeMimeEncodedFilename(sourceName).replace(/\.pdf$/i, "");
   return `${base}${t("-polycopié.pdf")}`;
 }
 
@@ -1175,7 +1238,7 @@ function renderBatchList() {
     dot.className = `status-dot ${entry.status}`;
     const name = document.createElement("span");
     name.className = "item-name";
-    name.textContent = entry.file.name;
+    name.textContent = decodeMimeEncodedFilename(entry.file.name);
     li.append(dot, name);
     if (entry.status === "failed" && entry.errorMessage) {
       const err = document.createElement("span");
