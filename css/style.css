@@ -188,20 +188,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
   width: 240px;
 }
 .mac-download-popover-header { display: flex; align-items: flex-start; gap: 10px; }
-.mac-download-icon {
-  width: 42px; flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-}
-.mac-download-icon img { width: 34px; height: 34px; border-radius: 9px; display: block; }
-/* "macOS" écrit dans le style Apple (typographie système, pas le logo — voir la
-   discussion sur les droits de marque) : minuscule, graisse fine, pleinement lisible. */
+.mac-download-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: block; }
+.mac-download-title { font-size: 13px; font-weight: 600; color: var(--text); }
+/* "Version macOS" écrit dans la police système Apple (pas le logo — voir la discussion
+   sur les droits de marque), affiché clairement, pas noyé dans une légende discrète. */
 .mac-download-oswordmark {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  font-size: 10px; font-weight: 500; letter-spacing: 0.01em;
-  color: var(--text-secondary);
+  font-size: 13px; font-weight: 500;
+  color: var(--accent);
+  margin-top: 1px;
 }
-.mac-download-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.mac-download-subtitle { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+.mac-download-subtitle { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; }
 .mac-download-cta {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   width: 100%; height: 32px; margin-top: 10px;

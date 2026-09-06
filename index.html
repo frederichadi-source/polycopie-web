@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png" />
-<link rel="stylesheet" href="css/style.css?v=1.5.7" />
+<link rel="stylesheet" href="css/style.css?v=1.5.8" />
 <script>
   // Appliqué en synchrone, avant le premier rendu, pour éviter un flash du thème par
   // défaut (Classique) le temps que app.js (type="module", asynchrone) se charge.
@@ -30,7 +30,7 @@
     <div class="brand-text">
       <div class="brand-name-row">
         <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
-        <span class="brand-version" aria-hidden="true">(v1.5.7)</span>
+        <span class="brand-version" aria-hidden="true">(v1.5.8)</span>
       </div>
       <span class="brand-copyright" data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
     </div>
@@ -54,12 +54,10 @@
       </button>
       <div id="macDownloadPopover" class="mac-download-popover" hidden>
         <div class="mac-download-popover-header">
-          <div class="mac-download-icon">
-            <img src="assets/icon/brand-mark.png" alt="" />
-            <span class="mac-download-oswordmark">macOS</span>
-          </div>
+          <img src="assets/icon/brand-mark.png" alt="" class="mac-download-icon" />
           <div>
             <div class="mac-download-title" data-i18n="Polycopié pour Mac">Polycopié pour Mac</div>
+            <div class="mac-download-oswordmark" data-i18n="Version macOS">Version macOS</div>
             <div class="mac-download-subtitle" data-i18n="App native, macOS 14 ou plus récent.">App native, macOS 14 ou plus récent.</div>
           </div>
         </div>
@@ -532,6 +530,6 @@
   </div>
 </dialog>
 
-<script type="module" src="js/app.js?v=1.5.7"></script>
+<script type="module" src="js/app.js?v=1.5.8"></script>
 </body>
 </html>

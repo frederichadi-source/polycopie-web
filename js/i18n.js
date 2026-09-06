@@ -58,6 +58,7 @@ export const STRINGS = {
   "Apparence": { fr: "Apparence", en: "Appearance" },
   "Disponible sur Mac": { fr: "Disponible sur Mac", en: "Available on Mac" },
   "Polycopié pour Mac": { fr: "Polycopié pour Mac", en: "Polycopié for Mac" },
+  "Version macOS": { fr: "Version macOS", en: "macOS Version" },
   "App native, macOS 14 ou plus récent.": { fr: "App native, macOS 14 ou plus récent.", en: "Native app, macOS 14 or later." },
   "Télécharger": { fr: "Télécharger", en: "Download" },
   "Retrouvez ce lien à tout moment via cette icône.": {
