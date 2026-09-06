@@ -60,9 +60,9 @@ export const STRINGS = {
   "Polycopié pour Mac": { fr: "Polycopié pour Mac", en: "Polycopié for Mac" },
   "App native, macOS 14 ou plus récent.": { fr: "App native, macOS 14 ou plus récent.", en: "Native app, macOS 14 or later." },
   "Télécharger": { fr: "Télécharger", en: "Download" },
-  "Retrouvez ce lien à tout moment via l'icône Apple ci-dessus.": {
-    fr: "Retrouvez ce lien à tout moment via l'icône Apple ci-dessus.",
-    en: "Find this link anytime via the Apple icon above."
+  "Retrouvez ce lien à tout moment via cette icône.": {
+    fr: "Retrouvez ce lien à tout moment via cette icône.",
+    en: "Find this link anytime via this icon."
   },
   "Classique": { fr: "Classique", en: "Classic" },
   "Académique": { fr: "Académique", en: "Academic" },
