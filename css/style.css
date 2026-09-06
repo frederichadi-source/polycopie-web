@@ -154,64 +154,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: 13px;
 }
 
-/* ---------- Proposition de téléchargement de l'app Mac (visible Mac uniquement) ---------- */
-.mac-download { position: relative; }
-.mac-download-btn {
-  display: flex; align-items: center; gap: 6px;
-  height: 30px;
-  padding: 0 10px 0 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  position: relative;
-}
-.mac-download-btn:hover { border-color: var(--accent); }
-.mac-download-app-icon { width: 18px; height: 18px; border-radius: 5px; display: block; }
-.mac-download-oswordmark-inline {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  font-size: 12.5px; font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-}
-.mac-download-inline-icon { color: var(--text-tertiary); flex-shrink: 0; }
-.mac-download-btn:hover .mac-download-inline-icon { color: var(--accent); }
-.mac-download-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 30;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 14px;
-  width: 240px;
-}
-.mac-download-popover-header { display: flex; align-items: flex-start; gap: 10px; }
-.mac-download-icon { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: block; }
-.mac-download-title { font-size: 13px; font-weight: 600; color: var(--text); }
-/* "Version macOS" écrit dans la police système Apple (pas le logo — voir la discussion
-   sur les droits de marque), affiché clairement, pas noyé dans une légende discrète. */
-.mac-download-oswordmark {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  font-size: 13px; font-weight: 500;
-  color: var(--accent);
-  margin-top: 1px;
-}
-.mac-download-subtitle { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; }
-.mac-download-cta {
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  width: 100%; height: 32px; margin-top: 10px;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 13px; font-weight: 500;
-  text-decoration: none;
-}
-.mac-download-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; }
-
 /* ---------- Sélecteur de thème (icône palette + popover) ---------- */
 .theme-switch { position: relative; }
 .theme-toggle-btn {

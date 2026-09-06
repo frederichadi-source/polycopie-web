@@ -56,16 +56,6 @@ export const STRINGS = {
   "diapositive": { fr: "diapositive", en: "slide" },
   "diapositives": { fr: "diapositives", en: "slides" },
   "Apparence": { fr: "Apparence", en: "Appearance" },
-  "Disponible sur Mac": { fr: "Disponible sur Mac", en: "Available on Mac" },
-  "Polycopié pour Mac": { fr: "Polycopié pour Mac", en: "Polycopié for Mac" },
-  "Version macOS": { fr: "Version macOS", en: "macOS Version" },
-  "macOS": { fr: "macOS", en: "macOS" },
-  "App native, macOS 14 ou plus récent.": { fr: "App native, macOS 14 ou plus récent.", en: "Native app, macOS 14 or later." },
-  "Télécharger": { fr: "Télécharger", en: "Download" },
-  "Retrouvez ce lien à tout moment via cette icône.": {
-    fr: "Retrouvez ce lien à tout moment via cette icône.",
-    en: "Find this link anytime via this icon."
-  },
   "Classique": { fr: "Classique", en: "Classic" },
   "Académique": { fr: "Académique", en: "Academic" },
   "Imprimerie": { fr: "Imprimerie", en: "Print Shop" },

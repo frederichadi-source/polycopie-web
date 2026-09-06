@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icon/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="assets/icon/favicon-16.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/apple-touch-icon.png" />
-<link rel="stylesheet" href="css/style.css?v=1.5.10" />
+<link rel="stylesheet" href="css/style.css?v=1.5.5" />
 <script>
   // Appliqué en synchrone, avant le premier rendu, pour éviter un flash du thème par
   // défaut (Classique) le temps que app.js (type="module", asynchrone) se charge.
@@ -30,7 +30,7 @@
     <div class="brand-text">
       <div class="brand-name-row">
         <span class="brand-name" data-i18n="Polycopié">Polycopié</span>
-        <span class="brand-version" aria-hidden="true">(v1.5.10)</span>
+        <span class="brand-version" aria-hidden="true">(v1.5.5)</span>
       </div>
       <span class="brand-copyright" data-i18n="Copyright © 2026 Frédéric Hadi. Tous droits réservés.">Copyright © 2026 Frédéric Hadi. Tous droits réservés.</span>
     </div>
@@ -39,36 +39,6 @@
     <span class="privacy-note" data-i18n="Vos fichiers ne quittent jamais votre navigateur : tout le traitement se fait localement.">
       Vos fichiers ne quittent jamais votre navigateur : tout le traitement se fait localement.
     </span>
-    <div id="macDownloadPrompt" class="mac-download" hidden>
-      <button
-        id="macDownloadBtn"
-        class="mac-download-btn"
-        type="button"
-        aria-haspopup="true"
-        aria-expanded="false"
-        data-i18n-title="Disponible sur Mac"
-        title="Disponible sur Mac"
-      >
-        <img src="assets/icon/brand-mark.png" alt="" class="mac-download-app-icon" />
-        <span class="mac-download-oswordmark-inline" data-i18n="macOS">macOS</span>
-        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="mac-download-inline-icon"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-      </button>
-      <div id="macDownloadPopover" class="mac-download-popover" hidden>
-        <div class="mac-download-popover-header">
-          <img src="assets/icon/brand-mark.png" alt="" class="mac-download-icon" />
-          <div>
-            <div class="mac-download-title" data-i18n="Polycopié pour Mac">Polycopié pour Mac</div>
-            <div class="mac-download-oswordmark" data-i18n="Version macOS">Version macOS</div>
-            <div class="mac-download-subtitle" data-i18n="App native, macOS 14 ou plus récent.">App native, macOS 14 ou plus récent.</div>
-          </div>
-        </div>
-        <a id="macDownloadLink" class="mac-download-cta" href="#" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-          <span data-i18n="Télécharger">Télécharger</span>
-        </a>
-        <div class="mac-download-hint" data-i18n="Retrouvez ce lien à tout moment via cette icône.">Retrouvez ce lien à tout moment via cette icône.</div>
-      </div>
-    </div>
     <div class="theme-switch">
       <button
         id="themeToggleBtn"
@@ -531,6 +501,6 @@
   </div>
 </dialog>
 
-<script type="module" src="js/app.js?v=1.5.10"></script>
+<script type="module" src="js/app.js?v=1.5.5"></script>
 </body>
 </html>
