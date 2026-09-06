@@ -175,6 +175,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   color: var(--text);
   white-space: nowrap;
 }
+.mac-download-inline-icon { color: var(--text-tertiary); flex-shrink: 0; }
+.mac-download-btn:hover .mac-download-inline-icon { color: var(--accent); }
 .mac-download-popover {
   position: absolute;
   top: calc(100% + 8px);

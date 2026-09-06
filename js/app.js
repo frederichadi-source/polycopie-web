@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.5.9";
+import { t, getLang, setLang } from "./i18n.js?v=1.5.10";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.5.9";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5.9";
+} from "./store.js?v=1.5.10";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5.10";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
