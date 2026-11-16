@@ -56,6 +56,16 @@ export const STRINGS = {
   "diapositive": { fr: "diapositive", en: "slide" },
   "diapositives": { fr: "diapositives", en: "slides" },
   "Apparence": { fr: "Apparence", en: "Appearance" },
+  "Disponible sur Mac": { fr: "Disponible sur Mac", en: "Available on Mac" },
+  "Polycopié pour Mac": { fr: "Polycopié pour Mac", en: "Polycopié for Mac" },
+  "Version macOS": { fr: "Version macOS", en: "macOS Version" },
+  "macOS": { fr: "macOS", en: "macOS" },
+  "App native, macOS 14 ou plus récent.": { fr: "App native, macOS 14 ou plus récent.", en: "Native app, macOS 14 or later." },
+  "Télécharger": { fr: "Télécharger", en: "Download" },
+  "Retrouvez ce lien à tout moment via cette icône.": {
+    fr: "Retrouvez ce lien à tout moment via cette icône.",
+    en: "Find this link anytime via this icon."
+  },
   "Classique": { fr: "Classique", en: "Classic" },
   "Académique": { fr: "Académique", en: "Academic" },
   "Imprimerie": { fr: "Imprimerie", en: "Print Shop" },
@@ -122,6 +132,11 @@ export const STRINGS = {
   "Taille du texte": { fr: "Taille du texte", en: "Text size" },
   "Couleur du texte": { fr: "Couleur du texte", en: "Text color" },
   "Réinitialiser la couleur du texte": { fr: "Réinitialiser la couleur du texte", en: "Reset text color" },
+  "Retourner les pages paires à 180°": { fr: "Retourner les pages paires à 180°", en: "Rotate even pages by 180°" },
+  "Évite que les pages s'impriment à l'envers en impression recto-verso en mode paysage.": {
+    fr: "Évite que les pages s'impriment à l'envers en impression recto-verso en mode paysage.",
+    en: "Prevents pages from printing upside down when printing double-sided in landscape."
+  },
   "Ajouter une page blanche après la page de titre": {
     fr: "Ajouter une page blanche après la page de titre",
     en: "Add a blank page after the title page"

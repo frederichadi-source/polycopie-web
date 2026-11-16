@@ -29,6 +29,11 @@ export function defaultOptions() {
     // n'incrémente pas la numérotation des pages, voir pdfEngine.js.
     titlePageAddBlankPageAfter: false,
 
+    // Paysage uniquement : tourne de 180° les feuilles de rang pair du PDF (page de titre
+    // et page blanche comprises) pour qu'elles ne sortent pas à l'envers en impression
+    // recto-verso. Les anciens réglages sans cette clé retombent sur true (voir loadLastUsed).
+    rotateEvenPagesInLandscape: true,
+
     // Style/couleur des lignes de la zone de notes — indépendant de `noteStyle`, qui ne
     // décrit que la disposition. "none" = zone réservée mais laissée vierge.
     noteLineStyle: "solid", // none | solid | dashed | dotted

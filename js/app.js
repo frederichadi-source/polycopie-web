@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.5.5";
+import { t, getLang, setLang } from "./i18n.js?v=1.6.1";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.5.5";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.5.5";
+} from "./store.js?v=1.6.1";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.6.1";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -78,6 +78,10 @@ const el = {
   langSelect: $("langSelect"),
   themeToggleBtn: $("themeToggleBtn"),
   themePopover: $("themePopover"),
+  macDownloadPrompt: $("macDownloadPrompt"),
+  macDownloadBtn: $("macDownloadBtn"),
+  macDownloadPopover: $("macDownloadPopover"),
+  macDownloadLink: $("macDownloadLink"),
   dropZone: $("dropZone"),
   dropEmpty: document.querySelector(".drop-zone-empty"),
   dropFilled: document.querySelector(".drop-zone-filled"),
@@ -162,6 +166,8 @@ const el = {
   titlePageFontColor: $("titlePageFontColor"),
   resetTitlePageColorBtn: $("resetTitlePageColorBtn"),
   titlePageAddBlankPageAfter: $("titlePageAddBlankPageAfter"),
+  rotateEvenPagesField: $("rotateEvenPagesField"),
+  rotateEvenPagesInLandscape: $("rotateEvenPagesInLandscape"),
   titlePageEssentialHint: $("titlePageEssentialHint"),
 
   headerFooterSection: $("headerFooterSection"),
@@ -305,6 +311,50 @@ if (el.themeToggleBtn && el.themePopover) {
 }
 
 // ---------------------------------------------------------------------------------------
+// Proposition de téléchargement de l'app Mac (discrète, visible aux visiteurs Mac
+// uniquement — l'icône reste dans l'en-tête en permanence, pour un accès différé si
+// l'utilisateur ferme le popover sans télécharger tout de suite).
+// ---------------------------------------------------------------------------------------
+// TODO : remplacer par la vraie URL de téléchargement (ex. lien direct vers le .dmg,
+// ou une page de renvoi) une fois l'app publiée quelque part.
+const MAC_APP_DOWNLOAD_URL = "#";
+
+function isMacVisitor() {
+  const platform = navigator.userAgentData?.platform || navigator.platform || "";
+  return /mac/i.test(platform) || /Macintosh/i.test(navigator.userAgent || "");
+}
+
+if (el.macDownloadPrompt && isMacVisitor()) {
+  el.macDownloadPrompt.hidden = false;
+  el.macDownloadLink.href = MAC_APP_DOWNLOAD_URL;
+
+  el.macDownloadBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const willOpen = el.macDownloadPopover.hidden;
+    el.macDownloadPopover.hidden = !willOpen;
+    el.macDownloadBtn.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (
+      !el.macDownloadPopover.hidden &&
+      !el.macDownloadPopover.contains(event.target) &&
+      event.target !== el.macDownloadBtn
+    ) {
+      el.macDownloadPopover.hidden = true;
+      el.macDownloadBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !el.macDownloadPopover.hidden) {
+      el.macDownloadPopover.hidden = true;
+      el.macDownloadBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------------------
 // Réglages <-> formulaire
 // ---------------------------------------------------------------------------------------
 
@@ -335,6 +385,7 @@ function populateFieldsFromOptions() {
 
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
+  el.rotateEvenPagesInLandscape.checked = options.rotateEvenPagesInLandscape;
   el.marginPoints.value = String(options.marginPoints);
 
   el.titlePageEnabled.checked = options.titlePageEnabled;
@@ -389,6 +440,7 @@ function updateConditionalVisibility() {
         : t("Actuellement : empilées (portrait)");
   }
 
+  el.rotateEvenPagesField.classList.toggle("hidden", options.orientation !== "landscape");
   el.noteDependentFields.classList.toggle("hidden", options.noteStyle === "none");
   el.noteLineColorField.classList.toggle("hidden", options.noteLineStyle === "none");
   el.noteLineOpacityField.classList.toggle("hidden", options.noteLineStyle === "none");
@@ -476,6 +528,7 @@ el.resetNoteLineColorBtn.addEventListener("click", () => {
 
 bindSelect(el.pageSize, "pageSize");
 bindSelect(el.orientation, "orientation");
+bindCheckbox(el.rotateEvenPagesInLandscape, "rotateEvenPagesInLandscape");
 bindRange(el.marginPoints, "marginPoints");
 
 bindCheckbox(el.titlePageEnabled, "titlePageEnabled");
