@@ -132,6 +132,11 @@ export const STRINGS = {
   "Taille du texte": { fr: "Taille du texte", en: "Text size" },
   "Couleur du texte": { fr: "Couleur du texte", en: "Text color" },
   "Réinitialiser la couleur du texte": { fr: "Réinitialiser la couleur du texte", en: "Reset text color" },
+  "À cocher si votre imprimante retourne le verso dans l'autre sens.": {
+    fr: "À cocher si votre imprimante retourne le verso dans l'autre sens.",
+    en: "Check this if your printer flips the back side the other way."
+  },
+  "Retourner les pages impaires à 180°": { fr: "Retourner les pages impaires à 180°", en: "Rotate odd pages by 180°" },
   "Retourner les pages paires à 180°": { fr: "Retourner les pages paires à 180°", en: "Rotate even pages by 180°" },
   "Évite que les pages s'impriment à l'envers en impression recto-verso en mode paysage.": {
     fr: "Évite que les pages s'impriment à l'envers en impression recto-verso en mode paysage.",

@@ -3,13 +3,13 @@
 // réglages (store.js). Tout tourne dans le navigateur : aucun fichier n'est envoyé à un
 // serveur.
 
-import { t, getLang, setLang } from "./i18n.js?v=1.6.1";
+import { t, getLang, setLang } from "./i18n.js?v=1.6.2";
 import {
   defaultOptions, loadLastUsed, saveAsLastUsed, PresetStore, hasArrangementChoice,
   loadShowAdvancedOptions, saveShowAdvancedOptions,
   DEFAULT_TITLE_TEXT_COLOR, DEFAULT_NOTE_LINE_COLOR
-} from "./store.js?v=1.6.1";
-import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.6.1";
+} from "./store.js?v=1.6.2";
+import { generateHandout, HandoutError, PDFDocument, notesAreaWouldBeEmpty, sourceAspectRatioOfDocument } from "./pdfEngine.js?v=1.6.2";
 import * as pdfjsLib from "https://esm.sh/pdfjs-dist@4.0.379/build/pdf.mjs";
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
@@ -168,6 +168,7 @@ const el = {
   titlePageAddBlankPageAfter: $("titlePageAddBlankPageAfter"),
   rotateEvenPagesField: $("rotateEvenPagesField"),
   rotateEvenPagesInLandscape: $("rotateEvenPagesInLandscape"),
+  rotateOddPagesInLandscape: $("rotateOddPagesInLandscape"),
   titlePageEssentialHint: $("titlePageEssentialHint"),
 
   headerFooterSection: $("headerFooterSection"),
@@ -386,6 +387,7 @@ function populateFieldsFromOptions() {
   el.pageSize.value = options.pageSize;
   el.orientation.value = options.orientation;
   el.rotateEvenPagesInLandscape.checked = options.rotateEvenPagesInLandscape;
+  el.rotateOddPagesInLandscape.checked = options.rotateOddPagesInLandscape;
   el.marginPoints.value = String(options.marginPoints);
 
   el.titlePageEnabled.checked = options.titlePageEnabled;
@@ -529,6 +531,7 @@ el.resetNoteLineColorBtn.addEventListener("click", () => {
 bindSelect(el.pageSize, "pageSize");
 bindSelect(el.orientation, "orientation");
 bindCheckbox(el.rotateEvenPagesInLandscape, "rotateEvenPagesInLandscape");
+bindCheckbox(el.rotateOddPagesInLandscape, "rotateOddPagesInLandscape");
 bindRange(el.marginPoints, "marginPoints");
 
 bindCheckbox(el.titlePageEnabled, "titlePageEnabled");

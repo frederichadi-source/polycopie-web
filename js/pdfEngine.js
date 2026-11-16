@@ -4,7 +4,7 @@
 // est le même des deux côtés, donc chaque CGRect/calcul se traduit directement.
 
 import { PDFDocument, StandardFonts, rgb, degrees } from "https://esm.sh/pdf-lib@1.17.1";
-import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.6.1";
+import { resolvedGrid, resolvedPageSize } from "./store.js?v=1.6.2";
 
 export class HandoutError extends Error {
   constructor(key) {
@@ -430,12 +430,15 @@ export async function generateHandout(sourceBytes, options, onProgress, included
   // contrairement à `outputPageNumber` qui sert à la numérotation affichée) : il détermine la
   // parité pour la rotation des pages paires en paysage.
   let physicalPageCount = 0;
-  const rotatesEvenPages = options.rotateEvenPagesInLandscape && options.orientation === "landscape";
+  const isLandscape = options.orientation === "landscape";
+  const rotatesEvenPages = options.rotateEvenPagesInLandscape && isLandscape;
+  const rotatesOddPages = options.rotateOddPagesInLandscape && isLandscape;
 
   function newPage() {
     const page = outDoc.addPage([pageSize.width, pageSize.height]);
     physicalPageCount++;
-    if (rotatesEvenPages && physicalPageCount % 2 === 0) page.setRotation(degrees(180));
+    const isEven = physicalPageCount % 2 === 0;
+    if ((isEven && rotatesEvenPages) || (!isEven && rotatesOddPages)) page.setRotation(degrees(180));
     page.drawRectangle({ x: 0, y: 0, width: pageSize.width, height: pageSize.height, color: WHITE });
     return page;
   }

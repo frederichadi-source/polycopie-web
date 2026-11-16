@@ -33,6 +33,8 @@ export function defaultOptions() {
     // et page blanche comprises) pour qu'elles ne sortent pas à l'envers en impression
     // recto-verso. Les anciens réglages sans cette clé retombent sur true (voir loadLastUsed).
     rotateEvenPagesInLandscape: true,
+    // Pendant pour les feuilles de rang impair — désactivé par défaut, combinable.
+    rotateOddPagesInLandscape: false,
 
     // Style/couleur des lignes de la zone de notes — indépendant de `noteStyle`, qui ne
     // décrit que la disposition. "none" = zone réservée mais laissée vierge.
